@@ -1,4 +1,4 @@
-﻿import type { Metadata } from "next";
+import type { Metadata } from "next";
 import { db } from "@/db";
 import { messages } from "@/db/schema";
 import { desc } from "drizzle-orm";

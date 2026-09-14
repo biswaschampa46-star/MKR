@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
@@ -6,6 +6,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Search, X, ArrowRight, ArrowUpRight } from "lucide-react";
 import { useUI } from "@/lib/store";
+import { trackTask } from "@/lib/loading-store";
 import { bdt } from "@/lib/format";
 import type { ProductCard } from "@/lib/products";
 
@@ -48,7 +49,7 @@ export default function SearchOverlay() {
     setLoading(true);
     const t = setTimeout(async () => {
       try {
-        const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`);
+        const res = await trackTask(fetch(`/api/search?q=${encodeURIComponent(q)}`));
         const data = (await res.json()) as { results: ProductCard[] };
         setResults(data.results ?? []);
       } catch {
@@ -97,7 +98,7 @@ export default function SearchOverlay() {
             </button>
           </div>
 
-          <form onSubmit={submit} className="mt-8 flex items-center gap-4 border-b border-line pb-4 focus-within:border-soft/60">
+          <form onSubmit={submit} className="mt-8 flex min-w-0 items-center gap-3 sm:gap-4 border-b border-line pb-4 focus-within:border-soft/60">
             <Search className="h-6 w-6 shrink-0 text-mist" strokeWidth={1.5} />
             <input
               ref={inputRef}
@@ -106,7 +107,7 @@ export default function SearchOverlay() {
               type="search"
               placeholder="What are you looking for?"
               aria-label="Search products"
-              className="font-display w-full bg-transparent text-2xl font-light tracking-tight text-foam placeholder:text-mist/40 focus:outline-none md:text-3xl"
+              className="font-display min-w-0 flex-1 bg-transparent text-2xl font-light tracking-tight text-foam placeholder:text-mist/40 focus:outline-none md:text-3xl"
             />
             <button type="submit" aria-label="Search" className="shrink-0 text-soft transition-colors hover:text-ice">
               <ArrowRight className="h-6 w-6" strokeWidth={1.5} />
@@ -114,10 +115,16 @@ export default function SearchOverlay() {
           </form>
 
           {/* live results */}
-          <div className="mt-8 min-h-[3rem]">
+          <div className="mt-8 min-h-[3rem]" aria-busy={loading} aria-live="polite">
+            {loading && (
+              <p className="flex items-center gap-2 py-4 text-sm text-mist">
+                <span className="h-4 w-4 animate-spin rounded-full border border-soft/40 border-t-transparent" aria-hidden="true" />
+                Searching…
+              </p>
+            )}
             {q.trim() && !loading && results.length === 0 && (
               <p className="py-4 text-sm text-mist">
-                Nothing found for â€œ{q}â€. Try another word.
+                Nothing found for “{q}”. Try another word.
               </p>
             )}
             <ul className="divide-y divide-line-soft">

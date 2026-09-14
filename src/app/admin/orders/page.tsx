@@ -1,4 +1,4 @@
-﻿import type { Metadata } from "next";
+import type { Metadata } from "next";
 import { db } from "@/db";
 import { orders } from "@/db/schema";
 import { desc } from "drizzle-orm";
@@ -24,5 +24,37 @@ export default async function AdminOrdersPage() {
 }
 
 function loadOrders() {
-  return db.select().from(orders).orderBy(desc(orders.createdAt));
+  return db
+    .select({
+      id: orders.id,
+      orderNumber: orders.orderNumber,
+      customerName: orders.customerName,
+      phone: orders.phone,
+      email: orders.email,
+      address: orders.address,
+      city: orders.city,
+      notes: orders.notes,
+      paymentMethod: orders.paymentMethod,
+      senderNumber: orders.senderNumber,
+      transactionId: orders.transactionId,
+      subtotal: orders.subtotal,
+      shippingFee: orders.shippingFee,
+      total: orders.total,
+      discount: orders.discount,
+      couponCode: orders.couponCode,
+      deliveryZone: orders.deliveryZone,
+      paymentPurpose: orders.paymentPurpose,
+      amountPaid: orders.amountPaid,
+      codAmount: orders.codAmount,
+      deliveryPaymentStatus: orders.deliveryPaymentStatus,
+      productPaymentStatus: orders.productPaymentStatus,
+      clientRequestId: orders.clientRequestId,
+      items: orders.items,
+      status: orders.status,
+      createdAt: orders.createdAt,
+      updatedAt: orders.updatedAt,
+      userId: orders.userId,
+    })
+    .from(orders)
+    .orderBy(desc(orders.createdAt));
 }

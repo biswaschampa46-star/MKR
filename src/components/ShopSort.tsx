@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { ChevronDown } from "lucide-react";
+import UiSelect from "@/components/UiSelect";
 import type { SortKey } from "@/lib/products";
 
 const OPTIONS: { value: SortKey; label: string }[] = [
@@ -28,23 +28,19 @@ export default function ShopSort({
   };
 
   return (
-    <label className="relative inline-flex items-center gap-3">
-      <span className="label sr-only md:not-sr-only">Sort</span>
-      <span className="relative">
-        <select
+    <div className="inline-flex min-w-0 max-w-full items-center gap-3">
+      <span className="label shrink-0 sr-only md:not-sr-only">Sort</span>
+      <div className="min-w-0 w-[min(13rem,calc(100vw-3rem))] sm:w-52 sm:max-w-none">
+        <UiSelect
           value={sort}
-          onChange={(e) => onChange(e.target.value)}
-          aria-label="Sort products"
-          className="cursor-pointer appearance-none rounded-full border border-line bg-transparent py-2.5 pl-5 pr-10 text-xs uppercase tracking-[0.18em] text-foam transition-colors hover:border-soft/50 focus:outline-none focus:border-soft/60"
-        >
-          {OPTIONS.map((o) => (
-            <option key={o.value} value={o.value} className="bg-deep text-foam normal-case">
-              {o.label}
-            </option>
-          ))}
-        </select>
-        <ChevronDown className="pointer-events-none absolute right-3.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-mist" />
-      </span>
-    </label>
+          onChange={onChange}
+          options={OPTIONS}
+          placeholder="Sort"
+          searchable={false}
+          ariaLabel="Sort products"
+          triggerClassName="ds-trigger--pill"
+        />
+      </div>
+    </div>
   );
 }

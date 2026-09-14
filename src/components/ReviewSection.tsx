@@ -6,6 +6,7 @@ import StarRating from "@/components/StarRating";
 import VerifiedPurchaseBadge from "@/components/VerifiedPurchaseBadge";
 import ReviewModal from "@/components/ReviewModal";
 import { formatDate } from "@/lib/format";
+import { useGlobalLoading } from "@/lib/loading-store";
 import type { RatingSummary } from "@/lib/reviews";
 import type { ProductReview } from "@/db/schema";
 
@@ -31,6 +32,7 @@ export default function ReviewSection({ productId, productName }: ReviewSectionP
   const load = async (pageToLoad = 1, append = false) => {
     setLoading(true);
     setError(null);
+    useGlobalLoading.getState().startTask();
     try {
       const res = await fetch(
         `/api/reviews?productId=${encodeURIComponent(productId)}&page=${pageToLoad}&limit=${PAGE_SIZE}`,
@@ -50,6 +52,7 @@ export default function ReviewSection({ productId, productName }: ReviewSectionP
     } finally {
       setLoading(false);
       setLoaded(true);
+      useGlobalLoading.getState().endTask();
     }
   };
 
@@ -83,6 +86,7 @@ export default function ReviewSection({ productId, productName }: ReviewSectionP
     <section
       ref={rootRef}
       aria-label="Customer reviews"
+      aria-busy={loading}
       className="mt-24 border-t border-line-soft pt-14 md:mt-32 md:pt-16"
     >
       <div className="flex flex-col justify-between gap-6 sm:flex-row sm:items-end">
@@ -218,12 +222,14 @@ export default function ReviewSection({ productId, productName }: ReviewSectionP
         </div>
       )}
 
-      <ReviewModal
-        open={modalOpen}
-        productId={productId}
-        productName={productName}
-        onClose={() => setModalOpen(false)}
-      />
+      {modalOpen && (
+        <ReviewModal
+          open={modalOpen}
+          productId={productId}
+          productName={productName}
+          onClose={() => setModalOpen(false)}
+        />
+      )}
     </section>
   );
 }

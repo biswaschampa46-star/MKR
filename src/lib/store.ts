@@ -3,6 +3,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { useEffect, useState } from "react";
+import type { VariantAttribute } from "@/db/schema";
 
 export type CartItem = {
   key: string; // productId + variant
@@ -13,6 +14,10 @@ export type CartItem = {
   variant: string;
   price: number;
   qty: number;
+  /** Optional, labeled options (Waist Size / Leg Opening) for pant/trouser items. */
+  attributes?: VariantAttribute[];
+  /** Known stock at add-time (UX hint only — checkout revalidates server-side). */
+  stock?: number;
 };
 
 type CartState = {
@@ -30,15 +35,19 @@ export const useCart = create<CartState>()(
       add: (item, qty) =>
         set((s) => {
           const key = `${item.productId}::${item.variant}`;
+          const cap = (n: number) =>
+            Math.min(n, 99, item.stock !== undefined ? Math.max(item.stock, 0) : 99);
           const existing = s.items.find((i) => i.key === key);
           if (existing) {
             return {
               items: s.items.map((i) =>
-                i.key === key ? { ...i, qty: Math.min(i.qty + qty, 99) } : i,
+                i.key === key
+                  ? { ...i, qty: cap(i.qty + qty), stock: item.stock ?? i.stock }
+                  : i,
               ),
             };
           }
-          return { items: [...s.items, { ...item, key, qty }] };
+          return { items: [...s.items, { ...item, key, qty: cap(qty) }] };
         }),
       remove: (key) => set((s) => ({ items: s.items.filter((i) => i.key !== key) })),
       setQty: (key, qty) =>
@@ -46,7 +55,11 @@ export const useCart = create<CartState>()(
           items:
             qty <= 0
               ? s.items.filter((i) => i.key !== key)
-              : s.items.map((i) => (i.key === key ? { ...i, qty: Math.min(qty, 99) } : i)),
+              : s.items.map((i) => {
+                  if (i.key !== key) return i;
+                  const max = i.stock !== undefined ? Math.min(99, Math.max(i.stock, 0)) : 99;
+                  return { ...i, qty: Math.min(qty, max) };
+                }),
         })),
       clear: () => set({ items: [] }),
     }),
@@ -59,10 +72,12 @@ type UIState = {
   menuOpen: boolean;
   searchOpen: boolean;
   aiOpen: boolean;
+  authOpen: boolean;
   setCartOpen: (v: boolean) => void;
   setMenuOpen: (v: boolean) => void;
   setSearchOpen: (v: boolean) => void;
   setAiOpen: (v: boolean) => void;
+  setAuthOpen: (v: boolean) => void;
 };
 
 export const useUI = create<UIState>((set) => ({
@@ -70,10 +85,12 @@ export const useUI = create<UIState>((set) => ({
   menuOpen: false,
   searchOpen: false,
   aiOpen: false,
+  authOpen: false,
   setCartOpen: (v) => set({ cartOpen: v }),
   setMenuOpen: (v) => set({ menuOpen: v }),
   setSearchOpen: (v) => set({ searchOpen: v }),
   setAiOpen: (v) => set({ aiOpen: v }),
+  setAuthOpen: (v) => set({ authOpen: v }),
 }));
 
 /** Avoids hydration mismatch for persisted-cart dependent UI. */

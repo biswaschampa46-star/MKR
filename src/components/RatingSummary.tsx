@@ -5,6 +5,31 @@ import StarRating from "@/components/StarRating";
 import type { RatingSummary } from "@/lib/reviews";
 
 /**
+ * Shared in-memory cache so a grid of N cards for N products issues at most
+ * one request per product per session (dedupes concurrent mounts too).
+ * Invalidated whenever a review is published.
+ */
+const summaryCache = new Map<string, Promise<RatingSummary | null>>();
+
+function fetchAndCache(productId: string): Promise<RatingSummary | null> {
+  const p = (async () => {
+    try {
+      const res = await fetch(`/api/reviews/summary?productId=${encodeURIComponent(productId)}`);
+      const data = await res.json();
+      return (data.summary ?? null) as RatingSummary | null;
+    } catch {
+      summaryCache.delete(productId);
+      return null;
+    }
+  })();
+  summaryCache.set(productId, p);
+  return p;
+}
+
+if (typeof window !== "undefined") {
+  window.addEventListener("reviews:published", () => summaryCache.clear());
+}
+/**
  * Live, compact rating summary. Fetches the averaged summary for a product
  * (never faked) and refreshes when a new review is published.
  * Returns null (renders nothing) until a product has approved reviews.
@@ -23,9 +48,8 @@ export default function RatingSummary({
 
   const load = async () => {
     try {
-      const res = await fetch(`/api/reviews/summary?productId=${encodeURIComponent(productId)}`);
-      const data = await res.json();
-      setSummary(data.summary ?? null);
+      const cached = summaryCache.get(productId) ?? fetchAndCache(productId);
+      setSummary(await cached);
     } catch {
       setSummary(null);
     } finally {

@@ -1,42 +1,67 @@
-﻿import Link from "next/link";
+import Link from "next/link";
 import Image from "next/image";
 import { ArrowUpRight } from "lucide-react";
-import { STORE } from "@/lib/config";
+import { getSettings } from "@/lib/settings";
+import { getContactDetails, hasAnyContact } from "@/lib/contact";
+import { ContactMethodList, SocialIconRow } from "./ContactInfo";
 import Reveal from "./Reveal";
 
-const SOCIALS = [
-  { label: "Instagram", href: "https://instagram.com" },
-  { label: "Facebook", href: "https://facebook.com" },
-  { label: "Pinterest", href: "https://pinterest.com" },
-];
+export default async function Footer() {
+  /* Live store identity & delivery fees from admin Settings. */
+  const s = await getSettings();
+  /* Live contact info from Admin → Contact Details (enabled + non-empty only). */
+  const contact = await getContactDetails();
+  const showContact = hasAnyContact(contact);
+  const locationLine = contact.address ?? "Dhaka, Bangladesh";
 
-export default function Footer() {
+  const orgSchema = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: contact.storeName,
+    ...(contact.email ? { email: contact.email } : {}),
+    ...(contact.phone ? { telephone: contact.phone } : {}),
+    ...(contact.address ? { address: contact.address } : {}),
+    sameAs: contact.socials.map((x) => x.href),
+  };
+
   return (
     <footer className="relative z-10 border-t border-line-soft">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(orgSchema) }}
+      />
       <div className="mx-auto max-w-[1400px] px-6 pb-10 pt-20 md:px-10 md:pt-28">
         {/* top row */}
         <div className="grid gap-14 md:grid-cols-12">
           <Reveal className="md:col-span-5">
-            <Link href="/" className="font-display text-2xl font-extrabold tracking-[0.3em] text-foam">
-              {STORE.name}
+            <Link href="/" aria-label={`${s.storeName} — home`} className="inline-flex min-w-0 max-w-full items-center gap-3 sm:gap-4">
+              <Image
+                src="/images/mkr-logo.jpg"
+                alt={`${s.storeName} logo`}
+                width={627}
+                height={627}
+                className="h-11 w-11 shrink-0 rounded-xl object-cover sm:h-14 sm:w-14"
+              />
+              <span className="font-rose min-w-0 flex-1 truncate text-xl leading-none text-foam sm:text-2xl">
+                {s.storeName.toUpperCase()}—Casual Threads & Style
+              </span>
             </Link>
             <p className="body-lead mt-6 max-w-sm">
-              {STORE.tagline} A small, considered catalogue â€” designed for everyday
+              {s.siteTagline} A small, considered catalogue — designed for everyday
               life, delivered across Bangladesh.
             </p>
-            <div className="mt-8 flex gap-3">
-              {SOCIALS.map((s) => (
-                <a
-                  key={s.label}
-                  href={s.href}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="label link-line !text-mist hover:!text-ice"
-                >
-                  {s.label}
-                </a>
-              ))}
-            </div>
+
+            {/* admin-managed contact methods (hidden when empty/disabled) */}
+            {showContact ? (
+              <div className="mt-8">
+                <ContactMethodList contact={contact} />
+                <div className="mt-6">
+                  <SocialIconRow contact={contact} />
+                </div>
+              </div>
+            ) : (
+              <p className="mt-8 text-sm text-mist/60">Contact information will be available soon.</p>
+            )}
           </Reveal>
 
           <Reveal delay={90} className="md:col-span-3">
@@ -74,7 +99,10 @@ export default function Footer() {
               ))}
             </ul>
             <p className="mt-6 text-xs leading-relaxed text-mist/60">
-              Advance payment only. We do not offer cash on delivery.
+              Delivery across Bangladesh — inside Chattogram ৳{s.deliveryFeeInside},
+              outside Chattogram ৳{s.deliveryFeeOutside}. Pay the delivery charge in
+              advance via bKash, Nagad or Rocket; products can be paid cash on delivery
+              or fully in advance.
             </p>
           </Reveal>
         </div>
@@ -84,14 +112,14 @@ export default function Footer() {
         {/* bottom row */}
         <div className="mt-8 flex flex-col items-start justify-between gap-6 md:flex-row md:items-center">
           <p className="text-xs tracking-wide text-mist/60">
-            Â© {new Date().getFullYear()} {STORE.name} Â· {STORE.city}
+            © {new Date().getFullYear()} {s.storeName} · {locationLine}
           </p>
           <p className="label !text-mist/50">Less clutter. More space.</p>
           <Link
             href="/shop"
             className="group inline-flex items-center gap-2 text-xs uppercase tracking-[0.28em] text-soft hover:text-ice"
           >
-            Explore the shop
+            Explore Shop
             <ArrowUpRight className="h-3.5 w-3.5 transition-transform duration-500 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
           </Link>
         </div>

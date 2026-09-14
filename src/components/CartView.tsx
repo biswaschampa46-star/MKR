@@ -1,17 +1,27 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Minus, Plus, X, ArrowRight, ShoppingBag } from "lucide-react";
-import { useCart, useCartTotals } from "@/lib/store";
+import { useCart, useCartTotals, useUI } from "@/lib/store";
+import { useAuth } from "@/lib/auth-store";
 import { bdt } from "@/lib/format";
+import { variantLabel } from "@/lib/variant-attributes";
 
-export default function CartView() {
+export default function CartView({
+  fees = { inside: 70, outside: 130 },
+}: {
+  /** Delivery fees from admin Settings (same source as Checkout/Footer). */
+  fees?: { inside: number; outside: number };
+}) {
   const setQty = useCart((s) => s.setQty);
   const remove = useCart((s) => s.remove);
   const { items, subtotal } = useCartTotals();
   const router = useRouter();
+  const user = useAuth((s) => s.user);
+  const setAuthOpen = useUI((s) => s.setAuthOpen);
+  const setPendingAction = useAuth((s) => s.setPendingAction);
 
 
   return (
@@ -51,7 +61,7 @@ export default function CartView() {
                       <Link href={`/product/${item.slug}`} className="font-display text-[0.95rem] font-semibold uppercase tracking-[0.07em] text-foam hover:text-ice">
                         {item.name}
                       </Link>
-                      <p className="mt-2 text-xs text-mist/80">{item.variant}</p>
+                      <p className="mt-2 text-xs text-mist/80">{variantLabel(item)}</p>
                       <p className="mt-2 text-xs text-mist/60">{bdt(item.price)} each</p>
                     </div>
                     <button
@@ -63,18 +73,24 @@ export default function CartView() {
                       <X className="h-4 w-4" strokeWidth={1.5} />
                     </button>
                   </div>
-                  <div className="mt-auto flex items-center justify-between pt-5">
+                  <div className="mt-auto flex items-center justify-between gap-3 pt-5">
                     <div className="inline-flex items-center rounded-full border border-line">
-                      <button type="button" className="grid h-9 w-9 place-items-center text-mist hover:text-ice" onClick={() => setQty(item.key, item.qty - 1)} aria-label="Decrease quantity">
+                      <button type="button" className="grid h-9 w-9 place-items-center text-mist hover:text-ice disabled:opacity-40" onClick={() => setQty(item.key, item.qty - 1)} aria-label="Decrease quantity">
                         <Minus className="h-3.5 w-3.5" />
                       </button>
                       <span className="w-7 text-center text-sm text-foam">{item.qty}</span>
-                      <button type="button" className="grid h-9 w-9 place-items-center text-mist hover:text-ice" onClick={() => setQty(item.key, item.qty + 1)} aria-label="Increase quantity">
+                      <button type="button" className="grid h-9 w-9 place-items-center text-mist hover:text-ice disabled:opacity-40" onClick={() => setQty(item.key, item.qty + 1)} aria-label="Increase quantity" disabled={item.stock !== undefined && item.qty >= Math.max(item.stock, 0)} title={item.stock !== undefined && item.qty >= item.stock ? "Stock limit reached" : undefined}>
                         <Plus className="h-3.5 w-3.5" />
                       </button>
                     </div>
-                    <p className="font-display text-base font-semibold text-ice">{bdt(item.price * item.qty)}</p>
+                    <p className="font-display shrink-0 text-base font-semibold text-ice">{bdt(item.price * item.qty)}</p>
                   </div>
+                  {item.stock !== undefined && item.stock <= 0 && (
+                    <p role="status" className="pt-2 text-xs text-accent/90">Out of stock — it will be removed at checkout.</p>
+                  )}
+                  {item.stock !== undefined && item.stock > 0 && item.qty >= item.stock && (
+                    <p role="status" className="pt-2 text-xs text-mist/70">Only {item.stock} available.</p>
+                  )}
                 </div>
               </li>
             ))}
@@ -93,7 +109,9 @@ export default function CartView() {
                 </div>
                 <div className="flex justify-between">
                   <dt className="text-mist">Delivery charge (prepaid)</dt>
-                  <dd className="text-foam">{bdt(70)} Ctg / {bdt(130)} out</dd>
+                  <dd className="text-foam">
+                    {bdt(fees.inside)} inside Chattogram / {bdt(fees.outside)} outside
+                  </dd>
                 </div>
                 <div className="hairline-full" />
                 <div className="flex items-baseline justify-between">
@@ -102,10 +120,23 @@ export default function CartView() {
                 </div>
               </dl>
               <p className="mt-5 text-xs leading-relaxed text-mist/70">
-                Products are paid in CASH ON DELIVERY. The delivery charge — ৳70 inside
-                Chittagong, ৳130 outside — is paid in advance via bKash, Nagad or Rocket.
+                Products are paid in cash on delivery. The delivery charge —{" "}
+                {bdt(fees.inside)} inside Chattogram, {bdt(fees.outside)} outside — is paid in
+                advance via bKash, Nagad or Rocket.
               </p>
-              <button type="button" className="btn btn-solid mt-7 w-full" onClick={() => router.push("/checkout")}>
+              <button
+                type="button"
+                className="btn btn-solid mt-7 w-full"
+                onClick={() => {
+                  /* safety net — checkout also requires a signed-in account */
+                  if (!user) {
+                    setPendingAction(() => () => router.push("/checkout"));
+                    setAuthOpen(true);
+                    return;
+                  }
+                  router.push("/checkout");
+                }}
+              >
                 Proceed to Checkout <ArrowRight className="btn-arrow h-3.5 w-3.5" />
               </button>
               <Link href="/shop" className="link-line mt-6 inline-block text-xs uppercase tracking-[0.24em] text-mist hover:text-ice">

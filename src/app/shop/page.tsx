@@ -1,4 +1,4 @@
-﻿import type { Metadata } from "next";
+import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import ProductCard from "@/components/ProductCard";
@@ -69,13 +69,14 @@ export default async function ShopPage({
         </Suspense>
       </div>
 
-      {/* grid — subtle editorial stagger */}
+      {/* grid — subtle editorial stagger (replays on filter/sort/search change) */}
       {filtered.length > 0 ? (
-        <div className="grid grid-cols-12 gap-x-6 gap-y-14 md:gap-x-8">
+        <div key={`${view ?? "all"}-${q ?? ""}-${sort}`} className="grid grid-cols-12 gap-x-6 gap-y-14 md:gap-x-8">
           {filtered.map((p, i) => (
             <div
               key={p.id}
-              className={`col-span-12 sm:col-span-6 lg:col-span-4 ${
+              style={{ "--d": `${Math.min(i, 8) * 70}ms` } as React.CSSProperties}
+              className={`shop-grid-in col-span-12 sm:col-span-6 lg:col-span-4 ${
                 i % 3 === 1 ? "lg:mt-14" : ""
               }`}
             >
@@ -91,10 +92,10 @@ export default async function ShopPage({
           <p className="mx-auto mt-4 max-w-sm text-sm leading-relaxed text-mist">
             {q
               ? `No products matched “${q}”. Try a different search.`
-              : "This shelf is being restocked. Explore the full catalogue instead."}
+              : "This collection is being restocked. Explore the full catalogue instead."}
           </p>
           <Link href="/shop" className="btn btn-line mt-9">
-            Browse everything
+            Explore Shop
           </Link>
         </div>
       )}

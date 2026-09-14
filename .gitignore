@@ -15,7 +15,11 @@ build/
 Thumbs.db
 *.pem
 npm-debug.log*
+dev.log
+*.tsbuildinfo
 .vercel
 .netlify
 tsconfig.tsbuildinfo
 next-env.d.ts
+
+# local tooling\n.freebuff/

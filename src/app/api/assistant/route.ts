@@ -2,14 +2,8 @@ import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { products } from "@/db/schema";
 import { desc } from "drizzle-orm";
-import { getSettings } from "@/lib/settings";
-
-const MODELS = [
-  "nvidia/nemotron-3.5-lightning:free",
-  "inclusionai/ling-3.0-flash-fin:free",
-  "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
-];
-const ENDPOINT = "https://openrouter.ai/api/v1/chat/completions";
+import { getSettings, parseAiModels } from "@/lib/settings";
+import type { StoreSettings } from "@/lib/settings";
 
 /* naive per-IP rate limit: 20 requests / 10 min */
 const hits = new Map<string, { n: number; reset: number }>();
@@ -29,19 +23,16 @@ function cleanAnswer(raw: string): string {
 }
 function buildStoreContext(
   list: { name: string; slug: string; price: number; compareAtPrice: number | null; description: string; isNew: boolean; isFeatured: boolean; stock: number }[],
-  s: { deliveryFeeInside: number; deliveryFeeOutside: number; bkashNumber: string; nagadNumber: string; rocketNumber: string; tagline: string },
+  s: Pick<StoreSettings, "storeName" | "deliveryFeeInside" | "deliveryFeeOutside" | "bkashNumber" | "nagadNumber" | "rocketNumber" | "siteTagline">,
 ): string {
   const lines: string[] = [
-    "STORE: MKR — a clothing store (clothes only).",
+    `STORE: ${s.storeName} — a clothing store (clothes only).`,
     "Product payment: CASH ON DELIVERY. Only the delivery charge is prepaid via bKash/Nagad/Rocket.",
-    `Delivery charge: ৳${s.deliveryFeeInside} inside Chittagong, ৳${s.deliveryFeeOutside} outside Chittagong (prepaid).`,
+    `Delivery charge: ৳${s.deliveryFeeInside} inside Chattogram, ৳${s.deliveryFeeOutside} outside Chattogram (prepaid).`,
     "Store city: Dhaka, Bangladesh. We deliver across Bangladesh.",
     "Customers can track orders on /track using their phone number. Cart at /cart, checkout at /checkout, shop at /shop, FAQ at /faq, contact at /contact.",
-    s.tagline ? `Tagline: ${s.tagline}` : "",
-    "PAYMENT NUMBERS (only share if the customer asks how to prepay the delivery charge):" +
-      (s.bkashNumber ? ` bKash ${s.bkashNumber}.` : "") +
-      (s.nagadNumber ? ` Nagad ${s.nagadNumber}.` : "") +
-      (s.rocketNumber ? ` Rocket ${s.rocketNumber}.` : "") || " Payment numbers are not configured — say the team will share them after ordering.",
+    s.siteTagline ? `Tagline: ${s.siteTagline}` : "",
+    paymentNumbersLine(s),
     "PRODUCT CATALOGUE (live, do not invent anything outside this):",
     ...list.map(
       (p) =>
@@ -51,7 +42,19 @@ function buildStoreContext(
   return lines.filter(Boolean).join("\n");
 }
 
-const SYSTEM = `You are the friendly shop assistant of MKR, a clothing store.
+/** Payment-numbers line for the AI context (no numbers → explicit fallback text). */
+function paymentNumbersLine(s: { bkashNumber: string; nagadNumber: string; rocketNumber: string }): string {
+  const parts: string[] = [];
+  if (s.bkashNumber) parts.push(`bKash ${s.bkashNumber}.`);
+  if (s.nagadNumber) parts.push(`Nagad ${s.nagadNumber}.`);
+  if (s.rocketNumber) parts.push(`Rocket ${s.rocketNumber}.`);
+  return parts.length > 0
+    ? `PAYMENT NUMBERS (only share if the customer asks how to prepay the delivery charge): ${parts.join(" ")}`
+    : "PAYMENT NUMBERS: not configured — say the team will share them after ordering.";
+}
+
+function systemPrompt(storeName: string): string {
+  return `You are the friendly shop assistant of ${storeName}, a clothing store.
 Rules:
 - Answer ONLY from the store context given in the system context. Never invent products, prices, or policies.
 - If the customer writes in Bangla, reply in Bangla. If they write in English, reply in English.
@@ -59,6 +62,7 @@ Rules:
 - You can answer about: products, prices, new arrivals, delivery charges, cash-on-delivery, prepaying the delivery charge, store location, how to order, how to track an order.
 - You cannot place orders, change prices, or access the admin panel. For complaints, point to /contact.
 - If asked something unrelated to the store, politely steer back to shopping.`;
+}
 
 export async function POST(request: Request) {
   const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "local";
@@ -70,7 +74,10 @@ export async function POST(request: Request) {
   if (!rec || rec.reset <= now) hits.set(ip, { n: 1, reset: now + 10 * 60 * 1000 });
   else rec.n += 1;
 
-  const apiKey = process.env.OPENROUTER_API_KEY;
+  /* Assistant endpoint, API key and model names come from admin Settings first,
+     env vars second (see getSettings). */
+  const settings = await getSettings();
+  const apiKey = settings.aiApiKey;
   if (!apiKey) {
     return NextResponse.json({ ok: false, message: "The assistant is not configured yet." }, { status: 500 });
   }
@@ -91,41 +98,38 @@ export async function POST(request: Request) {
   }
 
   try {
-    const [list, settings] = await Promise.all([
-      db
-        .select({
-          name: products.name,
-          slug: products.slug,
-          price: products.price,
-          compareAtPrice: products.compareAtPrice,
-          description: products.description,
-          isNew: products.isNew,
-          isFeatured: products.isFeatured,
-          stock: products.stock,
-        })
-        .from(products)
-        .orderBy(desc(products.createdAt)),
-      getSettings(),
-    ]);
+    const list = await db
+      .select({
+        name: products.name,
+        slug: products.slug,
+        price: products.price,
+        compareAtPrice: products.compareAtPrice,
+        description: products.description,
+        isNew: products.isNew,
+        isFeatured: products.isFeatured,
+        stock: products.stock,
+      })
+      .from(products)
+      .orderBy(desc(products.createdAt));
 
     const messages = [
       {
         role: "system",
-        content: `${SYSTEM}\n\nSTORE CONTEXT (the only source of truth):\n${buildStoreContext(list, settings)}`,
+        content: `${systemPrompt(settings.storeName)}\n\nSTORE CONTEXT (the only source of truth):\n${buildStoreContext(list, settings)}`,
       },
       ...history.map((m) => ({ role: m.role === "model" ? "assistant" : "user", content: m.text })),
     ];
 
     let text: string | undefined;
-    for (const model of MODELS) {
+    for (const model of parseAiModels(settings.aiModels)) {
       try {
-        const res = await fetch(ENDPOINT, {
+        const res = await fetch(settings.aiBaseUrl, {
           method: "POST",
           headers: {
             "content-type": "application/json",
             authorization: `Bearer ${apiKey}`,
-            "HTTP-Referer": "http://localhost:3000",
-            "X-Title": "MKR Shop Assistant",
+            "HTTP-Referer": process.env.SITE_URL?.trim() || "http://localhost:3000",
+            "X-Title": `${settings.storeName} Shop Assistant`,
           },
           body: JSON.stringify({
             model,

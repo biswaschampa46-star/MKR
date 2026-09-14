@@ -1,4 +1,4 @@
-﻿import type { Metadata } from "next";
+import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -8,6 +8,7 @@ import { eq } from "drizzle-orm";
 import { Check, ArrowRight, Smartphone, Package } from "lucide-react";
 import { bdt, stageLabel, methodLabel, formatDate } from "@/lib/format";
 import { getPaymentNumber } from "@/lib/settings";
+import { variantLabel } from "@/lib/variant-attributes";
 
 export const dynamic = "force-dynamic";
 
@@ -59,7 +60,7 @@ export default async function OrderPage({
         </div>
         {justPlaced && (
           <p className="mt-6 max-w-xl text-sm leading-relaxed text-mist">
-            Keep your order number â€” you can return to this page anytime via{" "}
+            Keep your order number — you can return to this page anytime via{" "}
             <Link href="/track" className="link-line text-soft hover:text-ice">Track Order</Link>.
           </p>
         )}
@@ -113,7 +114,9 @@ export default async function OrderPage({
                         </p>
                         {current && stage === "pending_payment" && (
                           <p className="mt-1.5 text-xs leading-relaxed text-mist/70">
-                            Waiting for your delivery-charge payment to be verified. Products are paid in cash on delivery.
+                            {order.paymentPurpose === "full_order"
+                              ? `Waiting for your ${bdt(order.total)} payment to be verified. Nothing to pay on delivery.`
+                              : `Waiting for your ${bdt(order.shippingFee)} delivery-charge payment to be verified. The ${bdt(order.codAmount)} product amount is paid in cash on delivery.`}
                           </p>
                         )}
                       </div>
@@ -134,7 +137,13 @@ export default async function OrderPage({
               <p className="mt-5 text-sm leading-relaxed text-mist">
                 Method: <span className="font-semibold text-foam">{methodLabel(order.paymentMethod)}</span>
                 <br />
-                Amount (delivery charge only): <span className="font-semibold text-ice">{bdt(order.shippingFee)}</span>
+                Amount to send now: <span className="font-semibold text-ice">{bdt(order.paymentPurpose === "full_order" ? order.total : order.shippingFee)}</span>
+                {order.paymentPurpose !== "full_order" && (
+                  <>
+                    <br />
+                    Remaining <span className="font-semibold text-foam">{bdt(order.codAmount)}</span> is collected in cash on delivery.
+                  </>
+                )}
               </p>
               {payTo ? (
                 <p className="mt-4 text-sm leading-relaxed text-mist">
@@ -151,7 +160,7 @@ export default async function OrderPage({
                 </p>
               )}
               <p className="mt-5 text-xs leading-relaxed text-mist/60">
-                We never mark payments as verified automatically â€” every order is
+                We never mark payments as verified automatically — every order is
                 checked by the store team.
               </p>
             </section>
@@ -195,7 +204,7 @@ export default async function OrderPage({
                       {item.name}
                     </Link>
                     <p className="mt-1.5 text-xs text-mist/70">
-                      {item.variant} Â· Ã—{item.qty}
+                      {variantLabel(item)} · ×{item.qty}
                     </p>
                   </div>
                   <p className="text-sm text-ice">{bdt(item.price * item.qty)}</p>
@@ -207,23 +216,68 @@ export default async function OrderPage({
                 <dt className="text-mist">Subtotal</dt>
                 <dd className="text-foam">{bdt(order.subtotal)}</dd>
               </div>
+              {order.discount > 0 && (
+                <div className="flex justify-between">
+                  <dt className="text-mist">Coupon {order.couponCode ? `(${order.couponCode})` : ""}</dt>
+                  <dd className="text-soft">−{bdt(order.discount)}</dd>
+                </div>
+              )}
               <div className="flex justify-between">
-                <dt className="text-mist">Delivery</dt>
+                <dt className="text-mist">Product total</dt>
+                <dd className="text-foam">{bdt(order.subtotal - order.discount)}</dd>
+              </div>
+              <div className="flex justify-between">
+                <dt className="text-mist">Delivery {order.deliveryZone === "inside_ctg" ? "(inside Chattogram)" : "(outside Chattogram)"}</dt>
                 <dd className="text-foam">{order.shippingFee === 0 ? "Free" : bdt(order.shippingFee)}</dd>
               </div>
-              <div className="flex items-baseline justify-between pt-2">
-                <dt className="label">Total</dt>
+              <div className="flex items-baseline justify-between border-t border-line-soft pt-4">
+                <dt className="label">Grand Total</dt>
                 <dd className="font-display text-xl font-bold text-ice">{bdt(order.total)}</dd>
               </div>
-              <div className="flex justify-between pt-1 text-xs">
+            </dl>
+
+            {/* payment breakdown */}
+            <dl className="mt-6 space-y-3 rounded-2xl border border-soft/25 bg-deep/50 p-5 text-sm">
+              <div className="flex justify-between">
+                <dt className="text-mist">Payment plan</dt>
+                <dd className="text-foam">
+                  {order.paymentPurpose === "full_order" ? "Full prepayment" : "Delivery prepaid + product COD"}
+                </dd>
+              </div>
+              <div className="flex justify-between">
+                <dt className="text-mist">Amount paid (advance)</dt>
+                <dd className={`font-semibold ${order.amountPaid > 0 ? "text-soft" : "text-mist/60"}`}>
+                  {bdt(order.amountPaid)}
+                  {order.amountPaid > 0 && " · verified"}
+                </dd>
+              </div>
+              <div className="flex justify-between">
+                <dt className="text-mist">Cash on delivery</dt>
+                <dd className="text-foam">{bdt(order.codAmount)}</dd>
+              </div>
+              <div className="flex justify-between border-t border-line-soft pt-3 text-xs">
+                <dt className="text-mist/70">Delivery charge</dt>
+                <dd className="text-mist">{order.deliveryPaymentStatus === "paid" ? "Paid" : "Awaiting verification"}</dd>
+              </div>
+              <div className="flex justify-between text-xs">
+                <dt className="text-mist/70">Product payment</dt>
+                <dd className="text-mist">
+                  {order.productPaymentStatus === "paid"
+                    ? "Paid"
+                    : order.productPaymentStatus === "cod"
+                      ? "Cash on delivery"
+                      : "Awaiting verification"}
+                </dd>
+              </div>
+              <div className="flex justify-between text-xs">
                 <dt className="text-mist/70">Payment method</dt>
-                <dd className="text-mist">{methodLabel(order.paymentMethod)} Â· advance</dd>
+                <dd className="text-mist">{methodLabel(order.paymentMethod)}</dd>
               </div>
             </dl>
           </section>
 
           <Link href="/shop" className="btn btn-line mt-8">
-            Continue Shopping <ArrowRight className="btn-arrow h-3.5 w-3.5" />
+            Continue shopping <ArrowRight className="btn-arrow h-3.5 w-3.5" />
           </Link>
         </div>
       </div>

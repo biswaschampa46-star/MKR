@@ -5,6 +5,8 @@ import { useMemo, useState } from "react";
 import { Star, Trash2, Eye, EyeOff } from "lucide-react";
 import { formatDate } from "@/lib/format";
 import type { AdminReview } from "@/app/api/admin/reviews/route";
+import UiSelect from "@/components/UiSelect";
+import { useGlobalLoading } from "@/lib/loading-store";
 
 export default function ReviewsManager({ reviews }: { reviews: AdminReview[] }) {
   const router = useRouter();
@@ -28,21 +30,31 @@ export default function ReviewsManager({ reviews }: { reviews: AdminReview[] }) 
 
   const setApproved = async (id: string, approved: boolean) => {
     setBusyId(id);
-    await fetch(`/api/admin/reviews/${id}`, {
-      method: "PATCH",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ approved }),
-    });
-    setBusyId(null);
-    router.refresh();
+    useGlobalLoading.getState().startTask();
+    try {
+      await fetch(`/api/admin/reviews/${id}`, {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ approved }),
+      });
+      router.refresh();
+    } finally {
+      setBusyId(null);
+      useGlobalLoading.getState().endTask();
+    }
   };
 
   const remove = async (id: string) => {
     if (!confirm("Delete this review? This cannot be undone.")) return;
     setBusyId(id);
-    await fetch(`/api/admin/reviews/${id}`, { method: "DELETE" });
-    setBusyId(null);
-    router.refresh();
+    useGlobalLoading.getState().startTask();
+    try {
+      await fetch(`/api/admin/reviews/${id}`, { method: "DELETE" });
+      router.refresh();
+    } finally {
+      setBusyId(null);
+      useGlobalLoading.getState().endTask();
+    }
   };
 
   return (
@@ -54,15 +66,23 @@ export default function ReviewsManager({ reviews }: { reviews: AdminReview[] }) 
           placeholder="Search reviewer, review, product…"
           className="w-72 rounded-lg border border-line bg-transparent px-4 py-2.5 text-sm text-foam placeholder:text-mist/40 focus:border-soft/60 focus:outline-none"
         />
-        <select
+        <UiSelect
+          variant="admin"
           value={filter}
-          onChange={(e) => setFilter(e.target.value)}
-          className="rounded-lg border border-line bg-[#061626] px-3 py-2.5 text-sm text-foam focus:outline-none"
-        >
-          <option value="all">All reviews</option>
-          <option value="live">Live ({reviews.filter((r) => r.approved).length})</option>
-          <option value="hidden">Hidden ({reviews.filter((r) => !r.approved).length})</option>
-        </select>
+          onChange={setFilter}
+          options={useMemo(
+            () => [
+              { value: "all", label: "All reviews" },
+              { value: "live", label: `Live (${reviews.filter((r) => r.approved).length})` },
+              { value: "hidden", label: `Hidden (${reviews.filter((r) => !r.approved).length})` },
+            ],
+            [reviews],
+          )}
+          placeholder="All reviews"
+          searchable={false}
+          ariaLabel="Filter reviews"
+          triggerClassName="ds-trigger--compact"
+        />
       </div>
 
       {filtered.length === 0 ? (

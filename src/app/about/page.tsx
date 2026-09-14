@@ -3,10 +3,14 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import Reveal from "@/components/Reveal";
+import { getActiveAboutMedia } from "@/lib/about-media";
+
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = { title: "About" };
 
-export default function AboutPage() {
+export default async function AboutPage() {
+  const media = await getActiveAboutMedia();
   return (
     <div className="mx-auto max-w-[1400px] px-6 pb-28 pt-36 md:px-10 md:pt-44">
       {/* statement */}
@@ -27,22 +31,34 @@ export default function AboutPage() {
       <div className="mt-20 grid items-start gap-14 md:mt-28 md:grid-cols-12">
         <Reveal className="md:col-span-7">
           <div className="media-frame relative aspect-[16/11]">
-            <Image
-              src="/images/promo.jpg"
-              alt="A calm bedroom corner in deep blue morning light"
-              fill
-              sizes="(max-width: 768px) 100vw, 58vw"
-              className="object-cover"
-            />
+            {media?.kind === "video" ? (
+              <video
+                src={media.url}
+                className="absolute inset-0 h-full w-full object-cover"
+                autoPlay
+                muted
+                loop
+                playsInline
+                aria-label={media.alt || "About MKR story video"}
+              />
+            ) : (
+              <Image
+                src={media?.url ?? "/images/promo.jpg"}
+                alt={media?.alt || "MKR pieces in calm blue morning light"}
+                fill
+                sizes="(max-width: 768px) 100vw, 58vw"
+                className="object-cover"
+              />
+            )}
             <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[rgba(7,26,43,0.45)] to-transparent" aria-hidden="true" />
           </div>
         </Reveal>
         <Reveal delay={140} className="md:col-span-4 md:col-start-9 md:pt-10">
           <div className="hairline mb-8 w-24" aria-hidden="true" />
           <p className="body-lead">
-            MKR is a small, considered catalogue of everyday objects. We
-            believe a home is built from a few things chosen carefully — not
-            many things chosen quickly.
+            MKR is a small, considered wardrobe of everyday pieces. We
+            believe a wardrobe is built from a few pieces chosen carefully —
+            not many things chosen quickly.
           </p>
           <p className="mt-6 text-sm leading-relaxed text-mist/80">
             Every product is photographed as it is, described as it is, and
@@ -58,12 +74,12 @@ export default function AboutPage() {
           {
             n: "i.",
             title: "Slow selection",
-            text: "We would rather list eight objects we love than eight hundred we tolerate.",
+            text: "We would rather list eight pieces we love than eight hundred we tolerate.",
           },
           {
             n: "ii.",
             title: "Honest commerce",
-            text: "Clear prices, advance payment only, and an order status that tells the truth at every step.",
+            text: "Clear prices, cash on delivery for products, advance payment for the delivery charge, and an order status that tells the truth at every step.",
           },
           {
             n: "iii.",

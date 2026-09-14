@@ -1,6 +1,7 @@
-﻿import { db } from "@/db";
+import { cache } from "react";
+import { db } from "@/db";
 import { products, type Product } from "@/db/schema";
-import { desc, eq, ilike, ne, or } from "drizzle-orm";
+import { and, desc, eq, ilike, ne, or } from "drizzle-orm";
 
 export type ProductCard = {
   id: string;
@@ -24,29 +25,83 @@ const cardColumns = {
   isFeatured: products.isFeatured,
 } as const;
 
+/** Admin product list row — includes status/stock/organization fields for filters & bulk actions. */
+export type AdminProductRow = ProductCard & {
+  sku: string;
+  category: string;
+  brand: string;
+  stock: number;
+  status: string;
+  visibility: string;
+  createdAt: Date;
+};
+
 export async function getAllProducts(): Promise<ProductCard[]> {
   try {
-    return await db.select(cardColumns).from(products).orderBy(desc(products.createdAt));
+    return await db
+      .select(cardColumns)
+      .from(products)
+      .where(and(eq(products.status, "active"), eq(products.visibility, "online")))
+      .orderBy(desc(products.createdAt));
   } catch {
     return [];
   }
 }
 
-export async function getProductBySlug(slug: string): Promise<Product | null> {
+/** Full admin list (all statuses) for the admin Products page. */
+export async function getAdminProducts(): Promise<AdminProductRow[]> {
   try {
-    const rows = await db.select().from(products).where(eq(products.slug, slug)).limit(1);
-    return rows[0] ?? null;
+    return await db
+      .select({
+        ...cardColumns,
+        sku: products.sku,
+        category: products.category,
+        brand: products.brand,
+        stock: products.stock,
+        status: products.status,
+        visibility: products.visibility,
+        createdAt: products.createdAt,
+      })
+      .from(products)
+      .orderBy(desc(products.createdAt));
   } catch {
-    return null;
+    return [];
   }
 }
+
+/** Request-memoized: metadata + page share one DB lookup per render. Admin list stays uncached. */
+export const getProductBySlug = cache(async (slug: string): Promise<Product | null> => {
+  try {
+    const rows = await db
+      .select()
+      .from(products)
+      .where(
+        and(
+          eq(products.slug, slug),
+          eq(products.status, "active"),
+          eq(products.visibility, "online"),
+        ),
+      )
+      .limit(1);
+    return rows[0] ?? null;
+  } catch (err) {
+    console.error("getProductBySlug failed", err);
+    return null;
+  }
+});
 
 export async function getRelatedProducts(product: Product, limit = 3): Promise<ProductCard[]> {
   try {
     return await db
       .select(cardColumns)
       .from(products)
-      .where(ne(products.id, product.id))
+      .where(
+        and(
+          ne(products.id, product.id),
+          eq(products.status, "active"),
+          eq(products.visibility, "online"),
+        ),
+      )
       .limit(limit);
   } catch {
     return [];
@@ -60,7 +115,11 @@ export async function searchProducts(q: string, limit = 6): Promise<ProductCard[
     return await db
       .select(cardColumns)
       .from(products)
-      .where(or(ilike(products.name, term), ilike(products.description, term)))
+      .where(and(
+        eq(products.status, "active"),
+        eq(products.visibility, "online"),
+        or(ilike(products.name, term), ilike(products.description, term)),
+      ))
       .limit(limit);
   } catch {
     return [];

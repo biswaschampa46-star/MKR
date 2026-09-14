@@ -1,4 +1,4 @@
-﻿import { NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { checkCredentials, setAdminCookie } from "@/lib/auth";
 
 /* naive in-memory rate limit: 10 attempts / 10 min per IP */

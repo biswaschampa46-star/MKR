@@ -1,4 +1,4 @@
-﻿import type { Metadata } from "next";
+import type { Metadata } from "next";
 import AdminShell from "@/components/admin/AdminShell";
 import SettingsForm from "@/components/admin/SettingsForm";
 import { getSettings } from "@/lib/settings";

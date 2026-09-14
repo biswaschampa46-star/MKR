@@ -1,8 +1,9 @@
-﻿"use client";
+"use client";
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { formatDate } from "@/lib/format";
+import { useGlobalLoading } from "@/lib/loading-store";
 import type { InferSelectModel } from "drizzle-orm";
 import type { messages } from "@/db/schema";
 
@@ -15,9 +16,14 @@ export default function MessagesManager({ items }: { items: Message[] }) {
   const remove = async (id: number) => {
     if (!confirm("Delete this message?")) return;
     setBusyId(id);
-    await fetch(`/api/admin/messages/${id}`, { method: "DELETE" });
-    setBusyId(null);
-    router.refresh();
+    useGlobalLoading.getState().startTask();
+    try {
+      await fetch(`/api/admin/messages/${id}`, { method: "DELETE" });
+      router.refresh();
+    } finally {
+      setBusyId(null);
+      useGlobalLoading.getState().endTask();
+    }
   };
 
   if (items.length === 0) return <p className="py-12 text-center text-sm text-mist">No messages yet.</p>;
@@ -35,6 +41,7 @@ export default function MessagesManager({ items }: { items: Message[] }) {
               type="button"
               onClick={() => remove(m.id)}
               disabled={busyId === m.id}
+              aria-busy={busyId === m.id}
               className="rounded-lg border border-accent/40 px-3 py-1.5 text-xs text-accent hover:bg-accent/10 disabled:opacity-50"
             >
               Delete

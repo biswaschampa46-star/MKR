@@ -1,13 +1,19 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
+import type { HeroVideo } from "@/db/schema";
 
-const HERO_VIDEO =
+/* Built-in defaults — shown only when no admin-managed hero video exists. */
+const DEFAULT_VIDEO =
   "https://videos.pexels.com/video-files/8365478/8365478-hd_1080_1920_30fps.mp4";
 
-export default function Hero() {
+export default function Hero({ video }: { video?: HeroVideo | null }) {
+  const src = video?.videoUrl || DEFAULT_VIDEO;
+  const poster = video?.thumbnailUrl || "/images/hero.jpg";
+  const bottomText = video?.bottomText || "No. 01 — Everyday Essentials";
+  const durationLabel = video?.durationLabel || "00:15";
   return (
-    <section className="relative overflow-hidden lg:min-h-[100vh]" aria-label="Introduction">
-      <div className="mx-auto grid max-w-[1400px] items-center gap-14 px-6 pb-20 pt-36 md:px-10 lg:min-h-[100vh] lg:grid-cols-12 lg:gap-8 lg:pb-24 lg:pt-28">
+    <section className="relative overflow-hidden lg:min-h-[100dvh]" aria-label="Introduction">
+      <div className="mx-auto grid max-w-[1400px] items-center gap-14 px-6 pb-20 pt-36 md:px-10 lg:grid-cols-12 lg:gap-8 lg:pb-24 lg:pt-28 lg:min-h-[100dvh]">
         {/* ——— text zone ——— */}
         <div className="relative z-10 lg:col-span-7">
           <p className="fi label flex items-center gap-4" style={{ "--d": "250ms" } as React.CSSProperties}>
@@ -24,8 +30,8 @@ export default function Hero() {
             className="fu body-lead mt-9 max-w-md"
             style={{ "--d": "820ms" } as React.CSSProperties}
           >
-            Discover objects designed for everyday life — a small, considered
-            catalogue for calmer, better living.
+            Discover pieces designed for everyday life — a small, considered
+            wardrobe for calmer, better living.
           </p>
 
           <div
@@ -49,15 +55,15 @@ export default function Hero() {
           >
             <video
               className="media-zoom h-full w-full object-cover"
-              poster="/images/hero.jpg"
+              poster={poster}
               autoPlay
               muted
               loop
               playsInline
               preload="metadata"
-              aria-label="Slow pour-over coffee, cinematic editorial footage"
+              aria-label={video?.subtitle || "MKR brand film, cinematic editorial footage"}
             >
-              <source src={HERO_VIDEO} type="video/mp4" />
+              <source src={src} type="video/mp4" />
             </video>
             {/* dreamy blue veil */}
             <div
@@ -65,19 +71,28 @@ export default function Hero() {
               aria-hidden="true"
             />
             <div className="absolute bottom-5 left-5 right-5 flex items-end justify-between">
-              <p className="label !text-ice/80">No. 01 — The Morning Ritual</p>
-              <p className="label hidden !text-ice/50 sm:block">00:15</p>
+              <p className="label !text-ice/80">{bottomText || video?.label || ""}</p>
+              <p className="label hidden !text-ice/50 sm:block">{durationLabel}</p>
             </div>
           </div>
 
           {/* offset caption strip */}
-          <p
-            className="fu mt-6 hidden max-w-xs text-sm leading-relaxed text-mist/80 lg:block"
-            style={{ "--d": "1150ms" } as React.CSSProperties}
-          >
-            Considered essentials for the quiet hours of the day — poured,
-            carried, worn, and kept.
-          </p>
+          {video?.subtitle ? (
+            <p
+              className="fu mt-6 hidden max-w-xs text-sm leading-relaxed text-mist/80 lg:block"
+              style={{ "--d": "1150ms" } as React.CSSProperties}
+            >
+              {video.subtitle}
+            </p>
+          ) : (
+            <p
+              className="fu mt-6 hidden max-w-xs text-sm leading-relaxed text-mist/80 lg:block"
+              style={{ "--d": "1150ms" } as React.CSSProperties}
+            >
+              Considered essentials for the quiet hours of the day — worn,
+              washed, and kept.
+            </p>
+          )}
         </div>
       </div>
 

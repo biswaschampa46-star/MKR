@@ -129,11 +129,11 @@ export default function Promo() {
           <span className="text-stroke">everyday life.</span>
         </h2>
         <p className="body-lead mt-7 max-w-md">
-          Objects that settle quietly into your routine — and stay there for years.
+          Pieces that settle quietly into your routine — and stay there for years.
         </p>
         <div className="mt-10">
           <Link href="/shop" className="btn btn-line !border-soft/40">
-            Explore <ArrowRight className="btn-arrow h-3.5 w-3.5" />
+            Explore Shop <ArrowRight className="btn-arrow h-3.5 w-3.5" />
           </Link>
         </div>
       </div>

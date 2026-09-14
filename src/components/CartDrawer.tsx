@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect } from "react";
 import Link from "next/link";
@@ -7,8 +7,14 @@ import { useRouter } from "next/navigation";
 import { X, Minus, Plus, ArrowRight, ShoppingBag } from "lucide-react";
 import { useUI, useCart, useCartTotals } from "@/lib/store";
 import { bdt } from "@/lib/format";
+import { variantLabel } from "@/lib/variant-attributes";
 
-export default function CartDrawer() {
+export default function CartDrawer({
+  fees = { inside: 70, outside: 130 },
+}: {
+  /** Delivery fees from admin Settings (passed from the root layout). */
+  fees?: { inside: number; outside: number };
+}) {
   const { cartOpen, setCartOpen } = useUI();
   const setQty = useCart((s) => s.setQty);
   const remove = useCart((s) => s.remove);
@@ -98,7 +104,7 @@ export default function CartDrawer() {
                           >
                             {item.name}
                           </Link>
-                          <p className="mt-1 text-xs text-mist/80">{item.variant}</p>
+                          <p className="mt-1 text-xs text-mist/80">{variantLabel(item)}</p>
                         </div>
                         <button
                           type="button"
@@ -109,11 +115,11 @@ export default function CartDrawer() {
                           <X className="h-4 w-4" strokeWidth={1.5} />
                         </button>
                       </div>
-                      <div className="mt-auto flex items-center justify-between pt-3">
+                      <div className="mt-auto flex items-center justify-between gap-3 pt-3">
                         <div className="inline-flex items-center rounded-full border border-line">
                           <button
                             type="button"
-                            className="grid h-7 w-7 place-items-center text-mist hover:text-ice"
+                            className="grid h-7 w-7 place-items-center text-mist hover:text-ice disabled:opacity-40"
                             onClick={() => setQty(item.key, item.qty - 1)}
                             aria-label="Decrease quantity"
                           >
@@ -122,15 +128,23 @@ export default function CartDrawer() {
                           <span className="w-6 text-center text-xs text-foam">{item.qty}</span>
                           <button
                             type="button"
-                            className="grid h-7 w-7 place-items-center text-mist hover:text-ice"
+                            className="grid h-7 w-7 place-items-center text-mist hover:text-ice disabled:opacity-40"
                             onClick={() => setQty(item.key, item.qty + 1)}
                             aria-label="Increase quantity"
+                            disabled={item.stock !== undefined && item.qty >= Math.max(item.stock, 0)}
+                            title={item.stock !== undefined && item.qty >= item.stock ? "Stock limit reached" : undefined}
                           >
                             <Plus className="h-3 w-3" />
                           </button>
                         </div>
-                        <p className="text-sm font-medium text-ice">{bdt(item.price * item.qty)}</p>
+                        <p className="shrink-0 text-sm font-medium text-ice">{bdt(item.price * item.qty)}</p>
                       </div>
+                      {item.stock !== undefined && item.stock <= 0 && (
+                        <p role="status" className="pt-2 text-xs text-accent/90">Out of stock — it will be removed at checkout.</p>
+                      )}
+                      {item.stock !== undefined && item.stock > 0 && item.qty >= item.stock && (
+                        <p role="status" className="pt-2 text-xs text-mist/70">Only {item.stock} available.</p>
+                      )}
                     </div>
                   </li>
                 ))}
@@ -144,14 +158,14 @@ export default function CartDrawer() {
               </div>
               <p className="mt-2 text-xs leading-relaxed text-mist/70">
                 Products are paid in cash on delivery. The delivery charge —
-                ৳70 inside Chittagong, ৳130 outside — is prepaid via bKash,
-                Nagad or Rocket.
+                {bdt(fees.inside)} inside Chattogram, {bdt(fees.outside)} outside — is prepaid
+                via bKash, Nagad or Rocket.
               </p>
-              <div className="mt-6 grid grid-cols-2 gap-3">
-                <button type="button" className="btn btn-line !px-4" onClick={() => go("/cart")}>
+              <div className="mt-6 grid grid-cols-1 gap-3 min-[400px]:grid-cols-2">
+                <button type="button" className="btn btn-line w-full !px-4" onClick={() => go("/cart")}>
                   View Cart
                 </button>
-                <button type="button" className="btn btn-solid !px-4" onClick={() => go("/checkout")}>
+                <button type="button" className="btn btn-solid w-full !px-4" onClick={() => go("/checkout")}>
                   Checkout <ArrowRight className="btn-arrow h-3.5 w-3.5" />
                 </button>
               </div>

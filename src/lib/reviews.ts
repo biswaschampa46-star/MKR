@@ -1,4 +1,4 @@
-import { and, count, desc, eq } from "drizzle-orm";
+import { and, count, desc, eq, sql } from "drizzle-orm";
 import { db } from "@/db";
 import {
   productReviews,
@@ -26,33 +26,39 @@ export async function getReviewSummary(
   productId: string,
 ): Promise<RatingSummary | null> {
   try {
-    const rows = await db
-      .select({
-        rating: productReviews.rating,
-        verifiedPurchase: productReviews.verifiedPurchase,
-      })
-      .from(productReviews)
-      .where(
-        and(
-          eq(productReviews.productId, productId),
-          eq(productReviews.approved, true),
-        ),
-      );
+    const where = and(
+      eq(productReviews.productId, productId),
+      eq(productReviews.approved, true),
+    );
+    // Server-side aggregation: one small grouped query instead of loading every row.
+    const [totals, distRows] = await Promise.all([
+      db
+        .select({
+          total: count(),
+          average: sql<number | null>`avg(${productReviews.rating})`,
+          verifiedCount: sql<number>`count(*) filter (where ${productReviews.verifiedPurchase})`,
+        })
+        .from(productReviews)
+        .where(where),
+      db
+        .select({ rating: productReviews.rating, n: count() })
+        .from(productReviews)
+        .where(where)
+        .groupBy(productReviews.rating),
+    ]);
 
-    if (rows.length === 0) return null;
+    const total = totals[0]?.total ?? 0;
+    if (total === 0) return null;
 
-    const total = rows.length;
-    const sum = rows.reduce((acc, r) => acc + r.rating, 0);
     const distribution: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
-    for (const row of rows) {
-      const k = row.rating as 1 | 2 | 3 | 4 | 5;
-      distribution[k] = (distribution[k] ?? 0) + 1;
+    for (const row of distRows) {
+      distribution[row.rating] = row.n;
     }
 
     return {
-      average: sum / total,
+      average: Number(totals[0]?.average ?? 0),
       total,
-      verifiedCount: rows.reduce((acc, r) => acc + (r.verifiedPurchase ? 1 : 0), 0),
+      verifiedCount: totals[0]?.verifiedCount ?? 0,
       distribution,
     };
   } catch {
@@ -101,6 +107,8 @@ export type CreateReviewInput = {
   review?: string;
   email?: string;
   phone?: string;
+  /** Verified Supabase user id (already token-checked by the route). Null for guests. */
+  userId?: string | null;
 };
 
 export async function createReview(input: CreateReviewInput): Promise<{
@@ -140,10 +148,20 @@ export async function createReview(input: CreateReviewInput): Promise<{
       .limit(1);
     if (!existing) return { ok: false, message: "That product could not be found." };
 
-    // verified purchase — match the buyer's phone against an order that
-    // actually contains this product. Never assumed.
+    // verified purchase — match the buyer against an order that actually
+    // contains this product. Prefer the authenticated user id; fall back to
+    // the legacy phone match for guest reviews. Never assumed.
     let verifiedPurchase = false;
-    if (phone) {
+    if (input.userId) {
+      const orderRows = await db
+        .select({ items: orders.items })
+        .from(orders)
+        .where(eq(orders.userId, input.userId));
+      verifiedPurchase = orderRows.some((order) =>
+        order.items.some((item) => item.productId === productId),
+      );
+    }
+    if (!verifiedPurchase && phone) {
       const orderRows = await db
         .select({ items: orders.items })
         .from(orders)
@@ -157,6 +175,7 @@ export async function createReview(input: CreateReviewInput): Promise<{
       .insert(productReviews)
       .values({
         productId,
+        userId: input.userId ?? null,
         name,
         rating,
         review,

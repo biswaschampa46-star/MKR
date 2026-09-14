@@ -1,8 +1,8 @@
-﻿import Link from "next/link";
-import Image from "next/image";
+import Link from "next/link";
 import type { ProductCard as ProductCardType } from "@/lib/products";
 import { bdt, discountPct } from "@/lib/format";
 import ProductCardRating from "@/components/ProductCardRating";
+import ProductCardImage from "@/components/ProductCardImage";
 
 export default function ProductCard({
   product,
@@ -19,17 +19,10 @@ export default function ProductCard({
     <Link
       href={`/product/${product.slug}`}
       className="group block"
-      aria-label={`${product.name} â€” ${bdt(product.price)}`}
+      aria-label={`${product.name} — ${bdt(product.price)}`}
     >
       <div className="pcard-media media-frame relative aspect-[4/5]">
-        <Image
-          src={product.image}
-          alt={product.name}
-          fill
-          sizes={sizes}
-          priority={priority}
-          className="object-cover"
-        />
+        <ProductCardImage src={product.image} alt={product.name} sizes={sizes} priority={priority} />
         {/* soft blue veil */}
         <div
           className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[rgba(7,26,43,0.35)] via-transparent to-transparent"
@@ -41,14 +34,14 @@ export default function ProductCard({
         {pct && <span className="badge-tag absolute left-4 top-4">Sale</span>}
       </div>
 
-      <div className="pcard-meta mt-5 flex items-start justify-between gap-4">
-        <div>
-          <h3 className="font-display text-[0.95rem] font-semibold uppercase tracking-[0.08em] text-foam">
+      <div className="pcard-meta mt-5 flex items-start justify-between gap-3 sm:gap-4">
+        <div className="min-w-0 flex-1">
+          <h3 className="font-display line-clamp-2 min-w-0 text-[0.95rem] font-semibold uppercase leading-snug tracking-[0.08em] text-foam">
             {product.name}
           </h3>
           <ProductCardRating productId={product.id} className="mt-2.5" />
         </div>
-        <div className="text-right">
+        <div className="shrink-0 text-right">
           <p className="text-[0.95rem] font-medium text-ice">{bdt(product.price)}</p>
           {product.compareAtPrice ? (
             <p className="mt-1 flex items-center justify-end gap-2 text-xs text-mist/70">

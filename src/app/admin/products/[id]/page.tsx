@@ -1,4 +1,4 @@
-﻿import type { Metadata } from "next";
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { db } from "@/db";
 import { products } from "@/db/schema";
@@ -15,7 +15,7 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
   const p = rows[0];
   if (!p) notFound();
 
-  const initial: ProductFormValues = {
+  const initial: ProductFormValues & { id: string } = {
     id: p.id,
     name: p.name,
     slug: p.slug,
@@ -27,7 +27,56 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
     stock: p.stock,
     isNew: p.isNew,
     isFeatured: p.isFeatured,
+    sku: p.sku,
+    barcode: p.barcode,
+    brand: p.brand,
+    category: p.category,
+    subcategory: p.subcategory,
+    collection: p.collection,
+    productType: p.productType,
+    shortDescription: p.shortDescription,
+    costPrice: p.costPrice,
+    taxPct: p.taxPct,
+    currency: p.currency,
+    gender: p.gender,
+    clothingType: p.clothingType,
+    fabric: p.fabric,
+    fabricWeight: p.fabricWeight,
+    fit: p.fit,
+    pattern: p.pattern,
+    season: p.season,
+    countryOfOrigin: p.countryOfOrigin,
+    sizes: p.sizes ?? [],
+    colors: p.colors ?? [],
+    variantInventory: p.variantInventory ?? [],
     variants: p.variants ?? [],
+    images: p.images ?? [],
+    tags: p.tags ?? [],
+    isBestSeller: p.isBestSeller,
+    sizeRecommendationEnabled: p.sizeRecommendationEnabled ?? false,
+    isOnSale: p.isOnSale,
+    status: p.status,
+    visibility: p.visibility,
+    trackInventory: p.trackInventory,
+    allowBackorders: p.allowBackorders,
+    lowStockThreshold: p.lowStockThreshold,
+    weightGrams: p.weightGrams,
+    packageWeightGrams: p.packageWeightGrams,
+    lengthCm: p.lengthCm,
+    widthCm: p.widthCm,
+    heightCm: p.heightCm,
+    freeShipping: p.freeShipping,
+    shippingClass: p.shippingClass,
+    seoTitle: p.seoTitle,
+    seoDescription: p.seoDescription,
+    seoKeywords: p.seoKeywords,
+    canonicalUrl: p.canonicalUrl,
+    seoImage: p.seoImage,
+    features: p.features ?? [],
+    specifications: p.specifications ?? [],
+    warranty: p.warranty ?? "",
+    returnPolicy: p.returnPolicy ?? "",
+    deliveryInfo: p.deliveryInfo ?? "",
   };
 
   return (

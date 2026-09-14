@@ -4,6 +4,7 @@ import {
   getApprovedReviews,
   createReview,
 } from "@/lib/reviews";
+import { verifyUserToken } from "@/lib/supabase-verify";
 
 export const dynamic = "force-dynamic";
 
@@ -50,7 +51,20 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, message: "Invalid request." }, { status: 400 });
   }
 
-  const result = await createReview(body as Parameters<typeof createReview>[0]);
+  const payload = body as Parameters<typeof createReview>[0] & {
+    /** Supabase access token of the signed-in customer (optional for guests). */
+    accessToken?: string;
+  };
+
+  /* Link the review to the authenticated customer when possible.
+     The token is verified server-side — a bare userId is never trusted. */
+  let linkedUserId: string | null = null;
+  if (payload.accessToken) {
+    const verified = await verifyUserToken(payload.accessToken);
+    if (verified.ok && verified.userId) linkedUserId = verified.userId;
+  }
+
+  const result = await createReview({ ...payload, userId: linkedUserId });
   if (!result.ok) {
     return NextResponse.json({ ok: false, message: result.message }, { status: 400 });
   }

@@ -1,7 +1,8 @@
-﻿"use client";
+"use client";
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { useGlobalLoading } from "@/lib/loading-store";
 
 export default function LoginForm() {
   const router = useRouter();
@@ -12,8 +13,10 @@ export default function LoginForm() {
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (busy) return;
     setBusy(true);
     setError("");
+    useGlobalLoading.getState().startTask();
     try {
       const res = await fetch("/api/admin/login", {
         method: "POST",
@@ -24,6 +27,7 @@ export default function LoginForm() {
       if (!data.ok) {
         setError(data.message ?? "Login failed.");
         setBusy(false);
+        useGlobalLoading.getState().endTask();
         return;
       }
       router.replace("/admin/dashboard");
@@ -31,7 +35,9 @@ export default function LoginForm() {
     } catch {
       setError("Something went wrong. Try again.");
       setBusy(false);
+      useGlobalLoading.getState().endTask();
     }
+    // Success navigates away — overlay failsafe releases the task signal.
   };
 
   return (
@@ -68,6 +74,7 @@ export default function LoginForm() {
       <button
         type="submit"
         disabled={busy}
+        aria-busy={busy}
         className="btn btn-line mt-8 w-full justify-center disabled:opacity-50"
       >
         {busy ? "Signing in…" : "Sign in"}

@@ -1,4 +1,4 @@
-﻿import { NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { mkdir, writeFile } from "fs/promises";
 import path from "path";
 import { randomInt } from "crypto";
@@ -12,6 +12,13 @@ const ALLOWED = new Map([
   ["image/gif", ".gif"],
 ]);
 
+/* Hero/section videos: larger cap, stored in the same uploads folder. */
+const VIDEO_ALLOWED = new Map([
+  ["video/mp4", ".mp4"],
+  ["video/webm", ".webm"],
+]);
+const VIDEO_MAX_BYTES = 50 * 1024 * 1024;
+
 export async function POST(request: Request) {
   if (!(await isAdmin())) return unauthorized();
   try {
@@ -20,11 +27,15 @@ export async function POST(request: Request) {
     if (!(file instanceof File)) {
       return NextResponse.json({ ok: false, message: "No file received." }, { status: 400 });
     }
-    const ext = ALLOWED.get(file.type);
+    const ext = ALLOWED.get(file.type) ?? VIDEO_ALLOWED.get(file.type);
     if (!ext) {
-      return NextResponse.json({ ok: false, message: "Only JPG, PNG, WEBP, AVIF or GIF images are allowed." }, { status: 400 });
+      return NextResponse.json({ ok: false, message: "Only JPG, PNG, WEBP, AVIF, GIF, MP4 or WEBM files are allowed." }, { status: 400 });
     }
-    if (file.size > 5 * 1024 * 1024) {
+    const isVideo = VIDEO_ALLOWED.has(file.type);
+    if (isVideo && file.size > VIDEO_MAX_BYTES) {
+      return NextResponse.json({ ok: false, message: "Video must be under 50 MB." }, { status: 400 });
+    }
+    if (!isVideo && file.size > 5 * 1024 * 1024) {
       return NextResponse.json({ ok: false, message: "Image must be under 5 MB." }, { status: 400 });
     }
     const dir = path.join(process.cwd(), "public", "uploads");

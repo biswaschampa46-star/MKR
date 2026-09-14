@@ -2,37 +2,42 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ChevronDown } from "lucide-react";
 import Reveal from "@/components/Reveal";
+import { getSettings } from "@/lib/settings";
+
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = { title: "FAQ" };
 
-const FAQS = [
-  {
-    q: "How do I pay for my order?",
-    a: "All orders are paid in advance with bKash, Nagad or Rocket. Place your order first — the payment instructions for your chosen method appear on the order page, and our team steps in if anything is unclear.",
-  },
-  {
-    q: "Do you offer cash on delivery?",
-    a: "No. MKR is advance-payment only. This keeps dispatch fast and the courier process simple for everyone.",
-  },
-  {
-    q: "When is my payment marked as verified?",
-    a: "Only after the store team checks it. We never confirm payments automatically — once your transaction is verified, your order moves from Pending Payment to Confirmed, and you can watch each step on the order page.",
-  },
-  {
-    q: "How can I track my order?",
-    a: "Use the Track Order page with your order number and the phone number from checkout. You'll see the full journey: Pending Payment → Payment Verified → Confirmed → Processing → Shipped → Delivered.",
-  },
-  {
-    q: "Where do you deliver?",
-    a: "Across Bangladesh. Delivery is a flat ৳80, and free on orders over ৳5,000.",
-  },
-  {
-    q: "Can I change or cancel my order?",
-    a: "If your order has not been confirmed yet, contact us with your order number and we will do our best. Confirmed orders are already being prepared and cannot be changed.",
-  },
-];
+export default async function FaqPage() {
+  /* Delivery fees come from admin Settings so the FAQ always matches checkout. */
+  const s = await getSettings();
+  const FAQS = [
+    {
+      q: "How do I pay for my order?",
+      a: "Pay only the delivery charge in advance with bKash, Nagad or Rocket — the products are paid cash on delivery. (You can also prepay the full order if you prefer.) Place your order first — the payment instructions for your chosen method appear on the order page, and our team steps in if anything is unclear.",
+    },
+    {
+      q: "Do you offer cash on delivery?",
+      a: "Yes. Products are paid in cash on delivery; only the delivery charge is paid in advance via bKash, Nagad or Rocket.",
+    },
+    {
+      q: "When is my payment marked as verified?",
+      a: "Only after the store team checks it. We never confirm payments automatically — once your transaction is verified, your order moves from Pending Payment to Confirmed, and you can watch each step on the order page.",
+    },
+    {
+      q: "How can I track my order?",
+      a: "Use the Track Order page with your order number and the phone number from checkout. You'll see the full journey: Pending Payment → Payment Verified → Confirmed → Processing → Shipped → Delivered.",
+    },
+    {
+      q: "Where do you deliver?",
+      a: `Across Bangladesh. The delivery charge is ৳${s.deliveryFeeInside} inside Chattogram and ৳${s.deliveryFeeOutside} outside Chattogram, paid in advance with your order — the same rates shown at checkout.`,
+    },
+    {
+      q: "Can I change or cancel my order?",
+      a: "If your order has not been confirmed yet, contact us with your order number and we will do our best. Confirmed orders are already being prepared and cannot be changed.",
+    },
+  ];
 
-export default function FaqPage() {
   return (
     <div className="mx-auto max-w-[1100px] px-6 pb-28 pt-36 md:px-10 md:pt-44">
       <header className="mb-16 md:mb-20">

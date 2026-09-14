@@ -26,7 +26,7 @@ type SpeechRecognitionLike = {
 
 const GREETING: Msg = {
   role: "model",
-  text: "আপনাকে স্বাগতম! 👋 আমি MKR-এর AI সহকারি। পণ্য, দাম, ডেলিভারি বা অর্ডের সম্পর্কে কিছু জিজ্ঞাসা করুন।",
+  text: "আপনাকে স্বাগতম! 👋 আমি MKR-এর AI সহকারি। পণ্য, দাম, ডেলিভারি বা অর্ডার সম্পর্কে যেকোনো প্রশ্ন করুন।",
 };
 
 export default function AiAssistant() {
@@ -114,7 +114,7 @@ export default function AiAssistant() {
       setMessages((m) => [...m, { role: "model", text: reply }]);
       speak(reply);
     } catch {
-      setMessages((m) => [...m, { role: "model", text: "Connection problem. Please try again." }]);
+      setMessages((m) => [...m, { role: "model", text: "সংযোগে সমস্যা হয়েছে। আবার চেষ্টা করুন।" }]);
     } finally {
       setBusy(false);
     }
@@ -170,7 +170,7 @@ export default function AiAssistant() {
         <LogoMark className="h-9 w-9" />
         <div className="min-w-0 flex-1">
           <p className="font-display text-sm font-bold tracking-[0.1em] text-foam">Mkr Assistant</p>
-          <p className="text-[0.7rem] text-mist/70">প্রশ্ন করুন, আমি সাহায্য করব</p>
+          <p className="text-[0.7rem] text-mist/70">প্রশ্ন করুন, আমি আপনাকে সাহায্য করতে পারি</p>
         </div>
         <button
           type="button"
