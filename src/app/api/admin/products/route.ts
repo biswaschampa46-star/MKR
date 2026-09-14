@@ -35,10 +35,16 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true, id: created.id, slug: created.slug, status: created.status });
   } catch (err) {
     console.error("admin product create failed", err);
-    const message =
-      err instanceof Error && err.message.includes("duplicate key")
-        ? "A product with that URL slug or SKU already exists — pick a different one."
-        : "Could not save the product. Please try again.";
+    const raw = err instanceof Error ? err.message : "";
+    /* Safe, non-technical hints for the two environmental failures that
+       produce this 500 on hosting (never echo raw DB errors to the browser). */
+    const message = raw.includes("DATABASE_URL is required")
+      ? "Database is not configured on the server. Set DATABASE_URL in Vercel → Settings → Environment Variables."
+      : /undefined (column|table)|does not exist/i.test(raw)
+        ? "Database schema is out of date. Run the SQL files in supabase/migrations/ on your Supabase project, then try again."
+        : raw.includes("duplicate key")
+          ? "A product with that URL slug or SKU already exists — pick a different one."
+          : "Could not save the product. Please try again.";
     return NextResponse.json({ ok: false, message }, { status: 500 });
   }
 }
