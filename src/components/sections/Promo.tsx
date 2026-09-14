@@ -91,7 +91,7 @@ export default function Promo() {
         <video
           ref={videoRef}
           className="h-full w-full object-cover"
-          poster="/images/promo.jpg"
+          poster="/images/mkr-logo-512.png"
           muted
           loop
           playsInline
