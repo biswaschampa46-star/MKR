@@ -32,10 +32,10 @@ async function uploadToSupabaseStorage(
   name: string,
   bytes: Buffer,
   contentType: string,
-): Promise<string | null> {
+): Promise<{ url?: string; reason?: string }> {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
-  if (!url || !serviceKey) return null;
+  if (!url || !serviceKey) return { reason: "unconfigured" };
   try {
     const { createClient } = await import("@supabase/supabase-js");
     const admin = createClient(url, serviceKey, {
@@ -47,12 +47,12 @@ async function uploadToSupabaseStorage(
     });
     if (error) {
       console.error("supabase storage upload failed", error.message);
-      return null;
+      return { reason: error.message };
     }
-    return `${url.replace(/\/$/, "")}/storage/v1/object/public/${STORAGE_BUCKET}/${name}`;
+    return { url: `${url.replace(/\/$/, "")}/storage/v1/object/public/${STORAGE_BUCKET}/${name}` };
   } catch (err) {
     console.error("supabase storage client error", err);
-    return null;
+    return { reason: "client error" };
   }
 }
 
@@ -79,17 +79,21 @@ export async function POST(request: Request) {
     const bytes = Buffer.from(await file.arrayBuffer());
 
     // Preferred: Supabase Storage (works on Vercel / any read-only host).
-    const remoteUrl = await uploadToSupabaseStorage(name, bytes, file.type);
-    if (remoteUrl) {
-      return NextResponse.json({ ok: true, url: remoteUrl });
+    const remote = await uploadToSupabaseStorage(name, bytes, file.type);
+    if (remote.url) {
+      return NextResponse.json({ ok: true, url: remote.url });
     }
 
     // Fallback: writable local disk (localhost / self-hosted VPS only).
     // On Vercel the filesystem is read-only — require Supabase Storage there.
     if (process.env.VERCEL === "1") {
-      console.error("admin upload: SUPABASE_SERVICE_ROLE_KEY is not configured (required on Vercel)");
+      const hint =
+        remote.reason === "unconfigured"
+          ? "Set SUPABASE_SERVICE_ROLE_KEY in Vercel → Settings → Environment Variables."
+          : "Check that the public 'uploads' bucket exists in Supabase → Storage.";
+      console.error("admin upload on Vercel failed:", remote.reason);
       return NextResponse.json(
-        { ok: false, message: "File storage is not configured. Set SUPABASE_SERVICE_ROLE_KEY and create the public 'uploads' bucket." },
+        { ok: false, message: `Image storage is not ready on the live site. ${hint}` },
         { status: 503 },
       );
     }

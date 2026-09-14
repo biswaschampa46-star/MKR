@@ -129,6 +129,7 @@ export default function ProductForm({ initial }: ProductFormProps) {
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState("");
   const [dirty, setDirty] = useState(false);
   const [saved, setSaved] = useState<{ id: string; slug: string; status: string } | null>(null);
   const [aiBusy, setAiBusy] = useState(false);
@@ -201,18 +202,43 @@ export default function ProductForm({ initial }: ProductFormProps) {
     const urls: string[] = [];
     setUploading(true);
     setError("");
+    setUploadError("");
     useGlobalLoading.getState().startTask();
     try {
       for (const file of Array.from(files)) {
+        /* Client-side pre-check: instant feedback without a round trip.
+           Images are capped below Vercel's ~4.5 MB serverless payload limit;
+           the server enforces its own 5 MB cap as well. */
+        const isVideo = file.type.startsWith("video/");
+        const limit = isVideo ? 50 * 1024 * 1024 : Math.floor(4.5 * 1024 * 1024);
+        if (!isVideo && file.size > limit) {
+          const msg = `"${file.name}" is too large — please use an image under 4.5 MB.`;
+          setError(msg);
+          setUploadError(msg);
+          break;
+        }
+        if (isVideo && file.size > limit) {
+          const msg = `"${file.name}" is too large — videos must be under 50 MB (and large videos cannot upload on Vercel hosting).`;
+          setError(msg);
+          setUploadError(msg);
+          break;
+        }
         const fd = new FormData();
         fd.append("file", file);
         const res = await fetch("/api/admin/upload", { method: "POST", body: fd });
         const data = (await res.json()) as { ok: boolean; url?: string; message?: string };
         if (data.ok && data.url) urls.push(data.url);
-        else { setError(data.message ?? "Upload failed."); break; }
+        else {
+          const msg = data.message ?? "Upload failed.";
+          setError(msg);
+          setUploadError(msg);
+          break;
+        }
       }
     } catch {
-      setError("Upload failed. Please try again.");
+      const msg = "Upload failed. Please try again.";
+      setError(msg);
+      setUploadError(msg);
     } finally {
       setUploading(false);
       useGlobalLoading.getState().endTask();
@@ -828,6 +854,9 @@ export default function ProductForm({ initial }: ProductFormProps) {
                   {uploading ? "Uploading…" : v.image ? "Replace main image" : "Upload main image (JPG, PNG, WEBP — under 5 MB)"}
                 </span>
               </label>
+              {uploadError && (
+                <p role="alert" className="mt-2 text-xs text-red-400">{uploadError}</p>
+              )}
             </Field>
 
             <Field label="Gallery Images" className="mt-4" hint="Reorder, set primary, add alt text.">
