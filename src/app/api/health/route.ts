@@ -1,6 +1,6 @@
 import { db } from "@/db";
 import { sql } from "drizzle-orm";
-import { supabaseConfigured } from "@/lib/supabase";
+import { getSiteUrl } from "@/lib/site";
 
 export const dynamic = "force-dynamic";
 
@@ -27,7 +27,15 @@ export async function GET() {
         configured: Boolean(process.env.DATABASE_URL?.trim()),
         error: dbError,
       },
-      supabaseAuth: { configured: supabaseConfigured },
+      /* NOTE: computed inline — @/lib/supabase is a "use client" module and
+         must not be imported into a server route (its exports evaluate to
+         undefined here, which silently serialized as {}). */
+      supabaseAuth: {
+        configured: Boolean(
+          process.env.NEXT_PUBLIC_SUPABASE_URL?.trim() &&
+            process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim(),
+        ),
+      },
       supabaseStorage: {
         configured: Boolean(
           process.env.NEXT_PUBLIC_SUPABASE_URL?.trim() &&
@@ -35,14 +43,17 @@ export async function GET() {
         ),
       },
       aiAssistant: {
-        configured: Boolean(process.env.OPENROUTER_API_KEY?.trim()),
+        configured: Boolean(
+          process.env.OPENROUTER_API_KEY?.trim() ||
+            process.env.OPENROUTER_API_KEY_FOR_ADMINPANEL_PRODUCT?.trim(),
+        ),
       },
       admin: {
         configured: Boolean(
           process.env.ADMIN_EMAIL?.trim() && process.env.ADMIN_PASSWORD,
         ),
       },
-      siteUrl: process.env.SITE_URL?.trim() || null,
+      siteUrl: getSiteUrl(),
     },
     { status: dbOk ? 200 : 500 },
   );

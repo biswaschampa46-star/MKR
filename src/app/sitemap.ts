@@ -1,7 +1,8 @@
 import type { MetadataRoute } from "next";
+import { getSiteUrl } from "@/lib/site";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const siteUrl = (process.env.SITE_URL?.trim() || "http://localhost:3000").replace(/\/$/, "");
+  const siteUrl = getSiteUrl();
   const now = new Date();
   const staticRoutes = ["", "/shop", "/about", "/contact", "/faq", "/track", "/cart", "/checkout"];
   return staticRoutes.map((path) => ({

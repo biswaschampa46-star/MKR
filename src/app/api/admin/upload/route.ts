@@ -84,7 +84,15 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: true, url: remoteUrl });
     }
 
-    // Fallback: writable local disk (localhost / self-hosted VPS).
+    // Fallback: writable local disk (localhost / self-hosted VPS only).
+    // On Vercel the filesystem is read-only — require Supabase Storage there.
+    if (process.env.VERCEL === "1") {
+      console.error("admin upload: SUPABASE_SERVICE_ROLE_KEY is not configured (required on Vercel)");
+      return NextResponse.json(
+        { ok: false, message: "File storage is not configured. Set SUPABASE_SERVICE_ROLE_KEY and create the public 'uploads' bucket." },
+        { status: 503 },
+      );
+    }
     const dir = path.join(process.cwd(), "public", "uploads");
     await mkdir(dir, { recursive: true });
     await writeFile(path.join(dir, name), bytes);

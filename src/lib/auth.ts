@@ -5,7 +5,11 @@ const COOKIE_NAME = "mkr_admin_session";
 const SESSION_DAYS = 7;
 
 function secret(): string {
-  return process.env.ADMIN_SESSION_SECRET || "mkr-casual-dev-secret";
+  const s = process.env.ADMIN_SESSION_SECRET;
+  if (!s && process.env.NODE_ENV === "production") {
+    console.error("ADMIN_SESSION_SECRET is not set — admin sessions will not survive restarts securely. Set it in Vercel.");
+  }
+  return s || "mkr-casual-dev-secret";
 }
 
 function sign(value: string): string {

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { isAdmin, unauthorized } from "@/lib/auth";
 import { getSettings, parseAiModels } from "@/lib/settings";
+import { getRefererUrl, getSiteUrl } from "@/lib/site";
 
 /**
  * Server-side AI product description generator for the admin panel.
@@ -46,7 +47,7 @@ function resolveImageUrl(raw: string): string | null {
   if (!url) return null;
   if (/^https?:\/\//i.test(url)) return url;
   if (/^\/uploads\//.test(url) || /^\/[^\s]+\.(jpe?g|png|webp|avif|gif)$/i.test(url)) {
-    const base = (process.env.SITE_URL || "http://localhost:3000").replace(/\/$/, "");
+    const base = getSiteUrl();
     return `${base}${url.startsWith("/") ? "" : "/"}${url}`;
   }
   return null;
@@ -55,9 +56,11 @@ function resolveImageUrl(raw: string): string | null {
 export async function POST(request: Request) {
   if (!(await isAdmin())) return unauthorized();
 
-  const apiKey = process.env.OPENROUTER_API_KEY_FOR_ADMINPANEL_PRODUCT?.trim();
+  const apiKey =
+    process.env.OPENROUTER_API_KEY_FOR_ADMINPANEL_PRODUCT?.trim() ||
+    process.env.OPENROUTER_API_KEY?.trim();
   if (!apiKey) {
-    console.error("product description generation: OPENROUTER_API_KEY_FOR_ADMINPANEL_PRODUCT is not configured");
+    console.error("product description generation: no OpenRouter API key configured (OPENROUTER_API_KEY_FOR_ADMINPANEL_PRODUCT / OPENROUTER_API_KEY)");
     return NextResponse.json(
       { ok: false, message: "AI description generation is not configured on the server." },
       { status: 500 },
@@ -83,9 +86,11 @@ export async function POST(request: Request) {
 
   /* Additional product info already entered in the form (sanitized into text). */
   const infoLines: string[] = [];
-  for (const [key, value] of Object.entries(body.info ?? {})) {
-    if (typeof value === "string" && value.trim()) infoLines.push(`${key}: ${value.trim().slice(0, 120)}`);
-    else if (typeof value === "number" && Number.isFinite(value)) infoLines.push(`${key}: ${value}`);
+  for (const [key, value] of Object.entries(body.info ?? {}).slice(0, 20)) {
+    const safeKey = key.trim().slice(0, 40);
+    if (!safeKey) continue;
+    if (typeof value === "string" && value.trim()) infoLines.push(`${safeKey}: ${value.trim().slice(0, 120)}`);
+    else if (typeof value === "number" && Number.isFinite(value)) infoLines.push(`${safeKey}: ${value}`);
   }
 
   /* The one configured model — no fallback list, no switching. */
@@ -116,7 +121,7 @@ async function callOpenRouter(
       headers: {
         "content-type": "application/json",
         authorization: `Bearer ${apiKey}`,
-        "HTTP-Referer": process.env.SITE_URL?.trim() || "http://localhost:3000",
+        "HTTP-Referer": getRefererUrl(),
         "X-Title": "Admin Product Description Generator",
       },
       body: JSON.stringify({

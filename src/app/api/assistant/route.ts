@@ -3,6 +3,7 @@ import { db } from "@/db";
 import { products } from "@/db/schema";
 import { desc } from "drizzle-orm";
 import { getSettings, parseAiModels } from "@/lib/settings";
+import { getRefererUrl } from "@/lib/site";
 import type { StoreSettings } from "@/lib/settings";
 
 /* naive per-IP rate limit: 20 requests / 10 min */
@@ -88,6 +89,8 @@ export async function POST(request: Request) {
     history = Array.isArray(body.history)
       ? body.history
           .filter((m) => m && (m.role === "user" || m.role === "model") && typeof m.text === "string" && m.text.trim())
+          .map((m) => ({ role: m.role, text: m.text.trim().slice(0, 1500) }))
+          .filter((m) => m.text.length > 0)
           .slice(-10)
       : [];
   } catch {
@@ -128,7 +131,7 @@ export async function POST(request: Request) {
           headers: {
             "content-type": "application/json",
             authorization: `Bearer ${apiKey}`,
-            "HTTP-Referer": process.env.SITE_URL?.trim() || "http://localhost:3000",
+            "HTTP-Referer": getRefererUrl(),
             "X-Title": `${settings.storeName} Shop Assistant`,
           },
           body: JSON.stringify({

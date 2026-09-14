@@ -60,9 +60,9 @@ export const DEFAULT_SETTINGS: StoreSettings = {
   bkashNumber: "",
   nagadNumber: "",
   rocketNumber: "",
-  aiBaseUrl: process.env.AI_BASE_URL?.trim() || DEFAULT_AI_BASE_URL,
+  aiBaseUrl: process.env.AI_BASE_URL?.trim() || process.env.OPENROUTER_BASE_URL?.trim() || DEFAULT_AI_BASE_URL,
   aiApiKey: "",
-  aiModels: process.env.AI_MODELS?.trim() || DEFAULT_AI_MODELS,
+  aiModels: process.env.AI_MODELS?.trim() || process.env.OPENROUTER_MODEL?.trim() || DEFAULT_AI_MODELS,
   /* ——— contact details default to empty/hidden-safe; enabled flags mirror the spec example ——— */
   contactPhone: "",
   contactWhatsapp: "",
@@ -93,11 +93,15 @@ export const DEFAULT_SETTINGS: StoreSettings = {
 function aiEnvFallback(key: string): string | null {
   switch (key) {
     case "aiBaseUrl":
-      return process.env.AI_BASE_URL?.trim() || null;
+      return process.env.AI_BASE_URL?.trim() || process.env.OPENROUTER_BASE_URL?.trim() || null;
     case "aiApiKey":
-      return process.env.OPENROUTER_API_KEY?.trim() || null;
+      return (
+        process.env.OPENROUTER_API_KEY?.trim() ||
+        process.env.OPENROUTER_API_KEY_FOR_ADMINPANEL_PRODUCT?.trim() ||
+        null
+      );
     case "aiModels":
-      return process.env.AI_MODELS?.trim() || null;
+      return process.env.AI_MODELS?.trim() || process.env.OPENROUTER_MODEL?.trim() || null;
     default:
       return null;
   }
@@ -165,7 +169,10 @@ export const getSettings = cache(async (): Promise<StoreSettings> => {
     /* db unreachable — env vars still configure the AI assistant */
     return {
       ...DEFAULT_SETTINGS,
-      aiApiKey: process.env.OPENROUTER_API_KEY?.trim() || "",
+      aiApiKey:
+        process.env.OPENROUTER_API_KEY?.trim() ||
+        process.env.OPENROUTER_API_KEY_FOR_ADMINPANEL_PRODUCT?.trim() ||
+        "",
     };
   }
 });

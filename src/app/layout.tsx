@@ -13,6 +13,7 @@ import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
 import StorefrontChrome from "@/components/StorefrontChrome";
 import { getSettings } from "@/lib/settings";
 import { getContactDetails } from "@/lib/contact";
+import { getSiteUrl } from "@/lib/site";
 
 /* The whole storefront renders per-request so admin Settings (title, tagline,
    delivery fees, AI config) take effect everywhere without a rebuild. */
@@ -21,7 +22,7 @@ export const dynamic = "force-dynamic";
 /* Browser-tab titles & search-engine description come from admin Settings → Website identity. */
 export async function generateMetadata(): Promise<Metadata> {
   const s = await getSettings();
-  const siteUrl = (process.env.SITE_URL?.trim() || "http://localhost:3000").replace(/\/$/, "");
+  const siteUrl = getSiteUrl();
   return {
     metadataBase: new URL(siteUrl),
     title: {

@@ -10,6 +10,7 @@ import {
   sortSizes,
   looksLikeClothingSize,
 } from "@/lib/sizing";
+import { getRefererUrl } from "@/lib/site";
 
 /**
  * "Find My Size" — secure recommendation endpoint.
@@ -150,7 +151,7 @@ export async function POST(request: Request) {
         headers: {
           "content-type": "application/json",
           authorization: `Bearer ${apiKey}`,
-          "HTTP-Referer": process.env.SITE_URL?.trim() || "http://localhost:3000",
+          "HTTP-Referer": getRefererUrl(),
           "X-Title": "MKR Find My Size",
         },
         body: JSON.stringify({

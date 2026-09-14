@@ -13,6 +13,7 @@ import Reveal from "@/components/Reveal";
 import TypewriterDescription from "@/components/TypewriterDescription";
 import RatingSummary from "@/components/RatingSummary";
 import ReviewSection from "@/components/ReviewSection";
+import { getSiteUrl } from "@/lib/site";
 
 export const dynamic = "force-dynamic";
 
@@ -24,7 +25,7 @@ export async function generateMetadata({
   const { slug } = await params;
   const product = await getProductBySlug(slug);
   if (!product) return { title: "Product not found", robots: { index: false } };
-  const siteUrl = (process.env.SITE_URL?.trim() || "http://localhost:3000").replace(/\/$/, "");
+  const siteUrl = getSiteUrl();
   const canonicalPath = `/product/${product.slug}`;
   const canonical = product.canonicalUrl?.trim() || `${siteUrl}${canonicalPath}`;
   const description =
