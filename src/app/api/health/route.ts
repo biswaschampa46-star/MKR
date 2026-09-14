@@ -1,13 +1,50 @@
 import { db } from "@/db";
 import { sql } from "drizzle-orm";
+import { supabaseConfigured } from "@/lib/supabase";
 
 export const dynamic = "force-dynamic";
 
+/**
+ * Deployment diagnostic: GET /api/health
+ * Reports which integrations are configured on the running host.
+ * Only booleans are returned — never secret values.
+ */
 export async function GET() {
+  let dbOk = false;
+  let dbError: string | null = null;
   try {
     await db.execute(sql`select 1`);
-    return Response.json({ ok: true });
-  } catch {
-    return Response.json({ ok: false }, { status: 500 });
+    dbOk = true;
+  } catch (err) {
+    dbError = err instanceof Error ? err.message : "unknown database error";
   }
+
+  return Response.json(
+    {
+      ok: dbOk,
+      database: {
+        connected: dbOk,
+        configured: Boolean(process.env.DATABASE_URL?.trim()),
+        error: dbError,
+      },
+      supabaseAuth: { configured: supabaseConfigured },
+      supabaseStorage: {
+        configured: Boolean(
+          process.env.NEXT_PUBLIC_SUPABASE_URL?.trim() &&
+            process.env.SUPABASE_SERVICE_ROLE_KEY?.trim(),
+        ),
+      },
+      aiAssistant: {
+        configured: Boolean(process.env.OPENROUTER_API_KEY?.trim()),
+      },
+      admin: {
+        configured: Boolean(
+          process.env.ADMIN_EMAIL?.trim() && process.env.ADMIN_PASSWORD,
+        ),
+      },
+      siteUrl: process.env.SITE_URL?.trim() || null,
+    },
+    { status: dbOk ? 200 : 500 },
+  );
 }
+
