@@ -1,4 +1,4 @@
-﻿import { db } from "@/db";
+import { db } from "@/db";
 import { products, type Product } from "@/db/schema";
 import { desc, eq, ilike, ne, or } from "drizzle-orm";
 
@@ -24,46 +24,90 @@ const cardColumns = {
   isFeatured: products.isFeatured,
 } as const;
 
-export async function getAllProducts(): Promise<ProductCard[]> {
+/* ------------------------------------------------------------------ */
+/*  Error-vs-empty contract                                            */
+/*                                                                     */
+/*  A failed database query MUST NOT be indistinguishable from a       */
+/*  successful query that returned zero rows. Callers use              */
+/*  `ok === false` to render an explicit error/retry state instead of  */
+/*  pretending the catalogue is empty (or, worse, that a product       */
+/*  "does not exist").                                                 */
+/* ------------------------------------------------------------------ */
+
+export type ProductResult<T> =
+  | { ok: true; data: T }
+  | { ok: false; error: string };
+
+function describeDbError(err: unknown): string {
+  const msg = err instanceof Error ? err.message : String(err);
+  console.error("[products] database query failed:", msg);
+  return msg;
+}
+
+export async function getAllProducts(): Promise<ProductResult<ProductCard[]>> {
   try {
-    return await db.select(cardColumns).from(products).orderBy(desc(products.createdAt));
-  } catch {
-    return [];
+    const rows = await db
+      .select(cardColumns)
+      .from(products)
+      .orderBy(desc(products.createdAt));
+    return { ok: true, data: rows };
+  } catch (err) {
+    return { ok: false, error: describeDbError(err) };
   }
 }
 
-export async function getProductBySlug(slug: string): Promise<Product | null> {
+/**
+ * Fetch a single product by its canonical slug. Returns `null` ONLY when the
+ * database was queried successfully and no row matched — a query failure is
+ * reported as `{ ok: false }` so the product page can show a retry state
+ * instead of a false 404.
+ */
+export async function getProductBySlug(
+  slug: string,
+): Promise<ProductResult<Product | null>> {
   try {
-    const rows = await db.select().from(products).where(eq(products.slug, slug)).limit(1);
-    return rows[0] ?? null;
-  } catch {
-    return null;
+    const rows = await db
+      .select()
+      .from(products)
+      .where(eq(products.slug, slug))
+      .limit(1);
+    return { ok: true, data: rows[0] ?? null };
+  } catch (err) {
+    return { ok: false, error: describeDbError(err) };
   }
 }
 
-export async function getRelatedProducts(product: Product, limit = 3): Promise<ProductCard[]> {
+export async function getRelatedProducts(
+  product: Product,
+  limit = 3,
+): Promise<ProductResult<ProductCard[]>> {
   try {
-    return await db
+    const rows = await db
       .select(cardColumns)
       .from(products)
       .where(ne(products.id, product.id))
       .limit(limit);
-  } catch {
-    return [];
+    return { ok: true, data: rows };
+  } catch (err) {
+    return { ok: false, error: describeDbError(err) };
   }
 }
 
-export async function searchProducts(q: string, limit = 6): Promise<ProductCard[]> {
+export async function searchProducts(
+  q: string,
+  limit = 6,
+): Promise<ProductResult<ProductCard[]>> {
   const term = `%${q.trim()}%`;
-  if (!q.trim()) return [];
+  if (!q.trim()) return { ok: true, data: [] };
   try {
-    return await db
+    const rows = await db
       .select(cardColumns)
       .from(products)
       .where(or(ilike(products.name, term), ilike(products.description, term)))
       .limit(limit);
-  } catch {
-    return [];
+    return { ok: true, data: rows };
+  } catch (err) {
+    return { ok: false, error: describeDbError(err) };
   }
 }
 

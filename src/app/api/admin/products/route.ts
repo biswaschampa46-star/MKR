@@ -22,9 +22,12 @@ export type ProductInput = {
 export function slugify(name: string): string {
   return name
     .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "") // strip accents after NFKD
     .replace(/[^a-z0-9\s-]/g, "")
     .trim()
-    .replace(/\s+/g, "-")
+    .replace(/[\s-]+/g, "-")
+    .replace(/^-+|-+$/g, "")
     .slice(0, 150);
 }
 
@@ -53,6 +56,7 @@ export async function POST(request: Request) {
     if (!image) return NextResponse.json({ ok: false, message: "An image URL or upload is required." }, { status: 400 });
 
     let slug = (body.slug ?? "").trim().slice(0, 160) || slugify(name);
+    if (!slug) slug = `product-${randomInt(1000, 9999)}`;
     const exists = await db.select({ id: products.id }).from(products).where(eq(products.slug, slug)).limit(1);
     if (exists.length > 0) slug = `${slug}-${randomInt(100, 999)}`;
 

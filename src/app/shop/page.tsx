@@ -1,9 +1,10 @@
-﻿import type { Metadata } from "next";
+import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import ProductCard from "@/components/ProductCard";
 import ShopSort from "@/components/ShopSort";
 import { getAllProducts, sortProducts, filterProducts, type SortKey } from "@/lib/products";
+import DataErrorState from "@/components/DataErrorState";
 
 export const dynamic = "force-dynamic";
 
@@ -21,7 +22,22 @@ export default async function ShopPage({
   const q = typeof sp.q === "string" ? sp.q : undefined;
   const sort: SortKey = SORTS.includes(sp.sort as SortKey) ? (sp.sort as SortKey) : "featured";
 
-  const all = await getAllProducts();
+  const result = await getAllProducts();
+
+  if (!result.ok) {
+    return (
+      <div className="mx-auto max-w-[1400px] px-6 pb-28 pt-36 md:px-10 md:pt-44">
+        <DataErrorState
+          title="The catalogue did not load."
+          message="The store database did not respond just now. This is temporary — your products are safe. Please try again."
+          backHref="/"
+          backLabel="Back to Home"
+        />
+      </div>
+    );
+  }
+
+  const all = result.data;
   const filtered = sortProducts(filterProducts(all, { view, q }), sort);
 
   const title = q ? `“${q}”` : view === "new" ? "New Arrivals" : "Shop All";

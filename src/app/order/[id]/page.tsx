@@ -8,6 +8,7 @@ import { eq } from "drizzle-orm";
 import { Check, ArrowRight, Smartphone, Package } from "lucide-react";
 import { bdt, stageLabel, methodLabel, formatDate } from "@/lib/format";
 import { getPaymentNumber } from "@/lib/settings";
+import DataErrorState from "@/components/DataErrorState";
 
 export const dynamic = "force-dynamic";
 
@@ -28,10 +29,20 @@ export default async function OrderPage({
   const justPlaced = sp.placed === "1";
 
   let order = null;
+  let dbFailed = false;
   try {
     order = (await db.select().from(orders).where(eq(orders.id, id)).limit(1))[0] ?? null;
-  } catch {
-    order = null;
+  } catch (err) {
+    dbFailed = true;
+    console.error("[order] lookup failed:", err instanceof Error ? err.message : err);
+  }
+  if (dbFailed) {
+    return (
+      <DataErrorState
+        title="We could not load this order."
+        message="The store database did not respond just now. This is temporary — your order is safe. Please try again."
+      />
+    );
   }
   if (!order) notFound();
 

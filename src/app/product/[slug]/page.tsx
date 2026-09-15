@@ -1,4 +1,4 @@
-﻿import type { Metadata } from "next";
+import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -11,6 +11,7 @@ import Reveal from "@/components/Reveal";
 import TypewriterDescription from "@/components/TypewriterDescription";
 import RatingSummary from "@/components/RatingSummary";
 import ReviewSection from "@/components/ReviewSection";
+import DataErrorState from "@/components/DataErrorState";
 
 export const dynamic = "force-dynamic";
 
@@ -20,9 +21,9 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const product = await getProductBySlug(slug);
-  if (!product) return { title: "Product not found" };
-  return { title: product.name, description: product.description.slice(0, 150) };
+  const result = await getProductBySlug(slug);
+  if (!result.ok || !result.data) return { title: "Product not found" };
+  return { title: result.data.name, description: result.data.description.slice(0, 150) };
 }
 
 export default async function ProductPage({
@@ -31,10 +32,24 @@ export default async function ProductPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const product = await getProductBySlug(slug);
+  const result = await getProductBySlug(slug);
+
+  // B) Database/network failure — NEVER render the 404 page for this.
+  if (!result.ok) {
+    return (
+      <DataErrorState
+        title="We could not load this product."
+        message="The store database did not respond just now. Your product still exists — this is temporary. Please try again."
+      />
+    );
+  }
+
+  // A) The query succeeded and genuinely no product has this slug.
+  const product = result.data;
   if (!product) notFound();
 
-  const related = await getRelatedProducts(product);
+  const relatedResult = await getRelatedProducts(product);
+  const related = relatedResult.ok ? relatedResult.data : [];
   const pct = discountPct(product.price, product.compareAtPrice);
 
   return (

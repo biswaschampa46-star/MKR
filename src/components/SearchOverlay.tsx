@@ -14,6 +14,7 @@ export default function SearchOverlay() {
   const [q, setQ] = useState("");
   const [results, setResults] = useState<ProductCard[]>([]);
   const [loading, setLoading] = useState(false);
+  const [failed, setFailed] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
 
@@ -46,12 +47,19 @@ export default function SearchOverlay() {
       return;
     }
     setLoading(true);
+    setFailed(false);
     const t = setTimeout(async () => {
       try {
         const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`);
-        const data = (await res.json()) as { results: ProductCard[] };
-        setResults(data.results ?? []);
+        const data = (await res.json()) as { ok?: boolean; results?: ProductCard[] };
+        if (!res.ok || data.ok === false) {
+          setFailed(true);
+          setResults([]);
+        } else {
+          setResults(data.results ?? []);
+        }
       } catch {
+        setFailed(true);
         setResults([]);
       } finally {
         setLoading(false);
@@ -115,9 +123,14 @@ export default function SearchOverlay() {
 
           {/* live results */}
           <div className="mt-8 min-h-[3rem]">
-            {q.trim() && !loading && results.length === 0 && (
+            {q.trim() && !loading && failed && (
+              <p className="py-4 text-sm text-accent">
+                Search hit a temporary problem — please try again.
+              </p>
+            )}
+            {q.trim() && !loading && !failed && results.length === 0 && (
               <p className="py-4 text-sm text-mist">
-                Nothing found for â€œ{q}â€. Try another word.
+                Nothing found for “{q}”. Try another word.
               </p>
             )}
             <ul className="divide-y divide-line-soft">
