@@ -8,7 +8,9 @@ const DEFAULT_VIDEO =
 
 export default function Hero({ video }: { video?: HeroVideo | null }) {
   const src = video?.videoUrl || DEFAULT_VIDEO;
-  const poster = video?.thumbnailUrl || "/images/hero.jpg";
+  /* No /images/hero.jpg exists in public/ — fall back to the shipped logo
+     asset so the poster never 404s when an admin video has no thumbnail. */
+  const poster = video?.thumbnailUrl || "/images/mkr-logo-512.png";
   const bottomText = video?.bottomText || "No. 01 — Everyday Essentials";
   const durationLabel = video?.durationLabel || "00:15";
   return (

@@ -12,6 +12,22 @@ type LogoOption = "image" | "sparkles" | "bot";
 const LOGO_OPTIONS: LogoOption[] = ["image", "sparkles", "bot"];
 const LOGO_LABEL: Record<LogoOption, string> = { image: "Logo image", sparkles: "Sparkle icon", bot: "Bot icon" };
 
+/* Hoisted out of the component so the header logo keeps a stable identity
+   across re-renders (e.g. every keystroke) instead of remounting. */
+function LogoMark({ logo, className }: { logo: LogoOption; className?: string }) {
+  return logo === "image" ? (
+    <Image src="/images/ai.png" alt="" width={40} height={40} className={`${className} object-contain`} />
+  ) : logo === "sparkles" ? (
+    <span className={`${className} grid place-items-center rounded-full bg-accent/15 text-accent`}>
+      <Sparkles className="h-1/2 w-1/2" strokeWidth={1.5} />
+    </span>
+  ) : (
+    <span className={`${className} grid place-items-center rounded-full bg-soft/20 text-ice`}>
+      <Bot className="h-1/2 w-1/2" strokeWidth={1.5} />
+    </span>
+  );
+}
+
 /* Web Speech API typings (not in all TS libs) */
 type SpeechRecognitionLike = {
   lang: string;
@@ -44,7 +60,11 @@ export default function AiAssistant() {
   const speakRef = useRef(false);
   const [logo, setLogo] = useState<LogoOption>("image");
 
-  speakRef.current = speakOn;
+  /* Mirror the toggle into the ref outside of render so concurrent renders
+     never observe a torn value. */
+  useEffect(() => {
+    speakRef.current = speakOn;
+  }, [speakOn]);
 
   /* Portal target: document.body. The panel is position:fixed, so it must
      never live inside an ancestor with a transform/filter (e.g. the
@@ -64,19 +84,6 @@ export default function AiAssistant() {
       return next;
     });
   };
-
-  const LogoMark = ({ className }: { className?: string }) =>
-    logo === "image" ? (
-      <Image src="/images/ai.png" alt="" width={40} height={40} className={`${className} object-contain`} />
-    ) : logo === "sparkles" ? (
-      <span className={`${className} grid place-items-center rounded-full bg-accent/15 text-accent`}>
-        <Sparkles className="h-1/2 w-1/2" strokeWidth={1.5} />
-      </span>
-    ) : (
-      <span className={`${className} grid place-items-center rounded-full bg-soft/20 text-ice`}>
-        <Bot className="h-1/2 w-1/2" strokeWidth={1.5} />
-      </span>
-    );
 
   useEffect(() => {
     const w = window as unknown as { SpeechRecognition?: new () => SpeechRecognitionLike; webkitSpeechRecognition?: new () => SpeechRecognitionLike };
@@ -167,7 +174,7 @@ export default function AiAssistant() {
     >
       {/* header */}
       <div className="flex items-center gap-3 border-b border-line-soft px-5 py-4">
-        <LogoMark className="h-9 w-9" />
+        <LogoMark logo={logo} className="h-9 w-9" />
         <div className="min-w-0 flex-1">
           <p className="font-display text-sm font-bold tracking-[0.1em] text-foam">Mkr Assistant</p>
           <p className="text-[0.7rem] text-mist/70">প্রশ্ন করুন, আমি আপনাকে সাহায্য করতে পারি</p>

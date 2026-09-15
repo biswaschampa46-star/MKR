@@ -22,4 +22,5 @@ dev.log
 tsconfig.tsbuildinfo
 next-env.d.ts
 
-# local tooling\n.freebuff/
+# local tooling
+.freebuff/

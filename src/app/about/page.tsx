@@ -43,7 +43,9 @@ export default async function AboutPage() {
               />
             ) : (
               <Image
-                src={media?.url ?? "/images/promo.jpg"}
+                /* No /images/promo.jpg exists in public/ — fall back to the shipped
+                   logo asset so the frame never 404s when no admin media is set. */
+                src={media?.url ?? "/images/mkr-logo-512.png"}
                 alt={media?.alt || "MKR pieces in calm blue morning light"}
                 fill
                 sizes="(max-width: 768px) 100vw, 58vw"
