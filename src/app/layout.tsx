@@ -14,6 +14,8 @@ import StorefrontChrome from "@/components/StorefrontChrome";
 import { getSettings } from "@/lib/settings";
 import { getContactDetails } from "@/lib/contact";
 import { getSiteUrl } from "@/lib/site";
+import { getAnnouncements } from "@/lib/promotions";
+import AnnouncementBar from "@/components/promo/AnnouncementBar";
 
 /* The whole storefront renders per-request so admin Settings (title, tagline,
    delivery fees, AI config) take effect everywhere without a rebuild. */
@@ -55,6 +57,8 @@ export const viewport: Viewport = {
 export default async function RootLayout({ children }: { children: ReactNode }) {
   const s = await getSettings();
   const contact = await getContactDetails();
+  const announcements = await getAnnouncements();
+
   return (
     <html lang="en">
       <head>
@@ -69,6 +73,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
       <body className="bg-abyss font-body text-foam antialiased">
         <GlobalLoadingOverlay />
         <Background />
+        {announcements.length > 0 && <AnnouncementBar campaigns={announcements} />}
         <StorefrontChrome>
           <Nav storeName={s.storeName} siteTagline={s.siteTagline} contact={contact} />
         </StorefrontChrome>

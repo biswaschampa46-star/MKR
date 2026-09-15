@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import ProductCard from "@/components/ProductCard";
 import ShopSort from "@/components/ShopSort";
+import PromoSlot from "@/components/promo/PromoSlot";
 import { getAllProducts, sortProducts, filterProducts, type SortKey } from "@/lib/products";
 
 export const dynamic = "force-dynamic";
@@ -54,6 +55,9 @@ export default async function ShopPage({
           {filtered.length} {filtered.length === 1 ? "product" : "products"}
         </p>
       </header>
+
+      {/* category-page placement (the shop doubles as the category page) */}
+      <PromoSlot placements={["category_page", "above_products"]} className="mt-8" />
 
       {/* controls */}
       <div className="mb-14 flex flex-wrap items-center justify-between gap-x-8 gap-y-5 border-b border-line-soft pb-5">

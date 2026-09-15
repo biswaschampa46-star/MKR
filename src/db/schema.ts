@@ -485,6 +485,91 @@ export const messages = pgTable("messages", {
 /*  Store settings (admin-editable key/value overrides)                */
 /* ------------------------------------------------------------------ */
 
+export const CAMPAIGN_TYPES = [
+  "percentage",
+  "flat",
+  "flash_sale",
+  "limited_time",
+  "new_arrival",
+  "free_delivery",
+  "coupon",
+  "special",
+  "custom",
+] as const;
+
+export type CampaignType = (typeof CAMPAIGN_TYPES)[number];
+
+export const CAMPAIGN_PLACEMENTS = [
+  "announcement",
+  "home_top",
+  "below_hero",
+  "above_products",
+  "between_sections",
+  "product_page",
+  "category_page",
+] as const;
+
+export type CampaignPlacement = (typeof CAMPAIGN_PLACEMENTS)[number];
+
+export const DISCOUNT_KINDS = ["none", "percentage", "fixed"] as const;
+export type DiscountKind = (typeof DISCOUNT_KINDS)[number];
+
+/**
+ * Dynamic promotional campaigns — managed entirely from the Admin Panel.
+ * All scheduled times are absolute UTC instants; Dhaka (Asia/Dhaka) is only
+ * ever used for display and admin datetime-local entry, never for storage.
+ */
+export const promoCampaigns = pgTable(
+  "promo_campaigns",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    campaignName: varchar("campaign_name", { length: 120 }).notNull(),
+    label: varchar("label", { length: 60 }).notNull().default(""),
+    heading: varchar("heading", { length: 120 }).notNull().default(""),
+    description: varchar("description", { length: 300 }).notNull().default(""),
+    campaignType: varchar("campaign_type", { length: 20 }).notNull().default("custom"),
+    discountKind: varchar("discount_kind", { length: 12 }).notNull().default("none"),
+    discountValue: integer("discount_value").notNull().default(0),
+    couponCode: varchar("coupon_code", { length: 40 }).notNull().default(""),
+    ctaText: varchar("cta_text", { length: 60 }).notNull().default(""),
+    ctaUrl: varchar("cta_url", { length: 300 }).notNull().default(""),
+    /* ——— design ——— */
+    bgMode: varchar("bg_mode", { length: 10 }).notNull().default("solid"), // solid | gradient | image
+    bgColor: varchar("bg_color", { length: 9 }).notNull().default("#0b263d"),
+    bgColor2: varchar("bg_color2", { length: 9 }).notNull().default("#4da8ff"),
+    textColor: varchar("text_color", { length: 9 }).notNull().default("#f4faff"),
+    accentColor: varchar("accent_color", { length: 9 }).notNull().default("#8ccbff"),
+    buttonColor: varchar("button_color", { length: 9 }).notNull().default("#ddf3ff"),
+    buttonTextColor: varchar("button_text_color", { length: 9 }).notNull().default("#06131f"),
+    radius: integer("radius").notNull().default(20), // px
+    height: varchar("height", { length: 8 }).notNull().default("md"), // sm | md | lg
+    layout: varchar("layout", { length: 10 }).notNull().default("center"), // center | split
+    align: varchar("align", { length: 6 }).notNull().default("left"), // left | center | right
+    gradientEnabled: boolean("gradient_enabled").notNull().default(true),
+    animationEnabled: boolean("animation_enabled").notNull().default(true),
+    imageUrl: varchar("image_url", { length: 300 }).notNull().default(""),
+    mobileImageUrl: varchar("mobile_image_url", { length: 300 }).notNull().default(""),
+    /* ——— targeting / schedule / ordering ——— */
+    placement: varchar("placement", { length: 20 }).notNull().default("below_hero"),
+    targetType: varchar("target_type", { length: 12 }).notNull().default("all"), // all | product | category | collection
+    targetId: varchar("target_id", { length: 200 }).notNull().default(""),
+    startAt: timestamp("start_at", { withTimezone: true }),
+    endAt: timestamp("end_at", { withTimezone: true }),
+    priority: integer("priority").notNull().default(5),
+    sortOrder: integer("sort_order").notNull().default(0),
+    isEnabled: boolean("is_enabled").notNull().default(true),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index("promo_campaigns_active_idx").on(t.isEnabled, t.placement, t.priority, t.sortOrder),
+    index("promo_campaigns_window_idx").on(t.startAt, t.endAt),
+  ],
+);
+
+export type PromoCampaign = typeof promoCampaigns.$inferSelect;
+export type NewPromoCampaign = typeof promoCampaigns.$inferInsert;
+
 export const settings = pgTable("settings", {
   key: varchar("key", { length: 60 }).primaryKey(),
   value: text("value").notNull(),

@@ -14,6 +14,7 @@ import TypewriterDescription from "@/components/TypewriterDescription";
 import RatingSummary from "@/components/RatingSummary";
 import ReviewSection from "@/components/ReviewSection";
 import { getSiteUrl } from "@/lib/site";
+import PromoSlot from "@/components/promo/PromoSlot";
 
 export const dynamic = "force-dynamic";
 
@@ -97,6 +98,9 @@ export default async function ProductPage({
         <ArrowLeft className="h-4 w-4 transition-transform duration-500 group-hover:-translate-x-1" />
         Back to shop
       </Link>
+
+      {/* product-page placement — targeted campaigns render here */}
+      <PromoSlot placements={["product_page"]} productId={product.id} className="mt-10" />
 
       <div className="mt-10 grid gap-14 lg:grid-cols-12 lg:gap-16">
         {/* media */}
