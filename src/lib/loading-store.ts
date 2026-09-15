@@ -87,3 +87,34 @@ export async function trackTask<T>(promise: Promise<T>): Promise<T> {
   }
 }
 
+/* ------------------------------------------------------------------ */
+/*  Boot window — single source of truth for "is the cinematic boot     */
+/*  splash active or still settling?" Route-level fallbacks consult     */
+/*  this so a second full-screen loader can never appear right after    */
+/*  the boot splash.                                                    */
+/* ------------------------------------------------------------------ */
+
+/** Boot splash is up OR within its exit/settle window (ms). */
+const BOOT_SETTLE_MS = 2200;
+let bootWindowUntil = 0;
+
+export function markBootWindowActive(): void {
+  bootWindowUntil = Date.now() + BOOT_SETTLE_MS;
+}
+
+export function markBootWindowDone(): void {
+  bootWindowUntil = 0;
+}
+
+/** Synchronous, SSR-safe check for RouteLoadingFallback (server render). */
+export function isBootOrSettling(): boolean {
+  if (typeof window === "undefined") return true; // SSR: never render a second loader
+  return Date.now() < bootWindowUntil || useGlobalLoading.getState().bootActive;
+}
+
+/** Called by route fallbacks once real content has arrived. */
+export function markNavigationComplete(): void {
+  const s = useGlobalLoading.getState();
+  if (s.routeActive) s.setRouteActive(false);
+}
+

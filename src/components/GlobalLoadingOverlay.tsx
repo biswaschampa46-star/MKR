@@ -3,16 +3,19 @@ import * as React from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 import PremiumLoader, { LOADER_STATUS } from "./PremiumLoader";
-import { useGlobalLoading } from "@/lib/loading-store";
+import { useGlobalLoading, markBootWindowActive, markBootWindowDone } from "@/lib/loading-store";
 import { useAuth } from "@/lib/auth-store";
 import { useHydrated } from "@/lib/store";
 
 const MIN_MS = 1400;
 const MAX_BOOT_MS = 6000;
+const EXIT_MS = 950;
+/** After the boot splash exits, navigation/task loaders stay suppressed
+    this long so the user never sees loader → loader. */
+const SETTLE_MS = 1200;
 const ROUTE_DELAY = 250;
 const TASK_DELAY = 250;
 const ROUTE_MAX = 8000;
-const EXIT_MS = 950;
 
 function useEased(run: boolean, done: boolean) {
   const [p, setP] = useState(0);
@@ -66,6 +69,10 @@ function OverlayInner() {
   const [bootReady, setBootReady] = useState(false);
   const [leaving, setLeaving] = useState(false);
   const [gone, setGone] = useState(false);
+  /** True from boot start until EXIT_MS after the splash began leaving.
+      Route/task loaders are suppressed during this whole window — this is
+      the core fix for the "loading → loading again" experience. */
+  const [bootSettling, setBootSettling] = useState(true);
   const [showRoute, setShowRoute] = useState(false);
   const [showTask, setShowTask] = useState(false);
   const startRef = useRef(0);
@@ -89,9 +96,13 @@ function OverlayInner() {
       const raf = requestAnimationFrame(() => {
         dismissBoot();
         setGone(true);
+        setBootSettling(false);
+        markBootWindowDone();
       });
       return () => cancelAnimationFrame(raf);
     }
+    // First visit: open the boot window so route fallbacks stay hidden.
+    markBootWindowActive();
     const raf = requestAnimationFrame(() => setMounted(true));
     const t = setTimeout(() => setBootReady(true), MAX_BOOT_MS);
     return () => { cancelAnimationFrame(raf); clearTimeout(t); };
@@ -127,9 +138,14 @@ function OverlayInner() {
     const t = setTimeout(() => {
       dismissBoot();
       setGone(true);
+      // Keep suppressing route/task loaders through the exit transition.
       try { sessionStorage.setItem("mkr-boot-done", "1"); } catch { /* noop */ }
     }, EXIT_MS);
-    return () => clearTimeout(t);
+    const settle = setTimeout(() => {
+      setBootSettling(false);
+      markBootWindowDone();
+    }, EXIT_MS + SETTLE_MS);
+    return () => { clearTimeout(t); clearTimeout(settle); };
   }, [bootReady, bootActive, dismissBoot]);
 
   const beginRoute = useCallback(() => {
@@ -230,8 +246,11 @@ function OverlayInner() {
   }, [taskCount]);
 
   const showBoot = mounted && bootActive && !gone;
-  const showNavLoader = showRoute || (routeActive && !showBoot);
-  const vis = showBoot || showNavLoader || (showTask && !showBoot && bootReady);
+  // One-loader guarantee: while the boot splash is visible OR still exiting
+  // (bootSettling), route/task loaders may not take over the screen.
+  const showNavLoader = !bootSettling && (showRoute || (routeActive && !showBoot));
+  const showTaskLoader = !bootSettling && showTask && !showNavLoader;
+  const vis = Boolean(showBoot || showNavLoader || showTaskLoader);
   const done = showBoot ? bootReady : !routeActive && taskCount === 0;
   const prog = useEased(vis, done);
   const status = prog >= 99 ? LOADER_STATUS[4] : prog >= 72 ? LOADER_STATUS[3] : prog >= 45 ? LOADER_STATUS[2] : prog >= 18 ? LOADER_STATUS[1] : LOADER_STATUS[0];
