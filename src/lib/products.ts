@@ -43,7 +43,10 @@ export async function getAllProducts(): Promise<ProductCard[]> {
       .from(products)
       .where(and(eq(products.status, "active"), eq(products.visibility, "online")))
       .orderBy(desc(products.createdAt));
-  } catch {
+  } catch (err) {
+    /* Never fail the storefront render, but never swallow the error either:
+       an empty catalogue must be diagnosable, not mistaken for "no products". */
+    console.error("getAllProducts failed", err);
     return [];
   }
 }
@@ -64,7 +67,8 @@ export async function getAdminProducts(): Promise<AdminProductRow[]> {
       })
       .from(products)
       .orderBy(desc(products.createdAt));
-  } catch {
+  } catch (err) {
+    console.error("getAdminProducts failed", err);
     return [];
   }
 }
@@ -103,7 +107,8 @@ export async function getRelatedProducts(product: Product, limit = 3): Promise<P
         ),
       )
       .limit(limit);
-  } catch {
+  } catch (err) {
+    console.error("getRelatedProducts failed", err);
     return [];
   }
 }
@@ -121,7 +126,8 @@ export async function searchProducts(q: string, limit = 6): Promise<ProductCard[
         or(ilike(products.name, term), ilike(products.description, term)),
       ))
       .limit(limit);
-  } catch {
+  } catch (err) {
+    console.error("searchProducts failed", err);
     return [];
   }
 }

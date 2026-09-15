@@ -362,17 +362,23 @@ details summary::-webkit-details-marker {
 
 /* ————————————————————— motion system ————————————————————— */
 
-/* scroll reveal — blur → sharp, rise */
+/* scroll reveal — blur → sharp, rise.
+   Progressive enhancement: .rv alone is fully visible, so SSR / pre-hydration
+   paint and no-JS clients never show blank sections. JavaScript adds
+   .rv-hidden (pre-paint, in Reveal) and the observer swaps it for .rv-in.
+   .rv-in must stay AFTER .rv-hidden: equal specificity, later rule wins. */
 .rv {
-  opacity: 0;
-  transform: translateY(28px);
-  filter: blur(10px);
   transition:
     opacity 1s ease,
     transform 1s var(--ease-silk),
     filter 1.05s ease;
   transition-delay: var(--rd, 0ms);
   will-change: opacity, transform, filter;
+}
+.rv-hidden {
+  opacity: 0;
+  transform: translateY(28px);
+  filter: blur(10px);
 }
 .rv-in {
   opacity: 1;
@@ -949,7 +955,7 @@ details summary::-webkit-details-marker {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
-  .rv, .fi, .fu, .fb, .lm > span, .menu-item {
+  .rv, .rv-hidden, .fi, .fu, .fb, .lm > span, .menu-item {
     opacity: 1 !important;
     transform: none !important;
     filter: none !important;

@@ -43,6 +43,12 @@ export default function Promo() {
     const el = sectionRef.current;
     if (!el) return;
 
+    /* Progressive enhancement (see Reveal): .rv is visible by default so the
+       block never paints blank pre-hydration. This section sits far below the
+       fold, so hiding it here post-hydration is unobservable and preserves
+       the original scroll-reveal entrance exactly. */
+    if (!reduced) el.classList.add("rv-hidden");
+
     const io = new IntersectionObserver(
       (entries) => entries.forEach((e) => e.isIntersecting && setSeen(true)),
       { threshold: 0.25 },
