@@ -1,6 +1,7 @@
 import { db } from "@/db";
 import { sql } from "drizzle-orm";
 import { getSiteUrl } from "@/lib/site";
+import { getProductDiagnostics } from "@/lib/products";
 
 export const dynamic = "force-dynamic";
 
@@ -19,6 +20,13 @@ export async function GET() {
     dbError = err instanceof Error ? err.message : "unknown database error";
   }
 
+  let products: Awaited<ReturnType<typeof getProductDiagnostics>> | null = null;
+  try {
+    products = await getProductDiagnostics();
+  } catch {
+    products = { total: null, visible: null, byStatus: [], error: "diagnostic failed" };
+  }
+
   return Response.json(
     {
       ok: dbOk,
@@ -26,6 +34,12 @@ export async function GET() {
         connected: dbOk,
         configured: Boolean(process.env.DATABASE_URL?.trim()),
         error: dbError,
+      },
+      products: {
+        total: products?.total ?? null,
+        visible: products?.visible ?? null,
+        byStatus: products?.byStatus ?? [],
+        error: products?.error ?? null,
       },
       /* NOTE: computed inline — @/lib/supabase is a "use client" module and
          must not be imported into a server route (its exports evaluate to

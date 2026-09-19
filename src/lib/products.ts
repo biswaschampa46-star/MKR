@@ -48,8 +48,67 @@ export async function getAllProducts(): Promise<ProductCard[]> {
   } catch (err) {
     /* Never fail the storefront render, but never swallow the error either:
        an empty catalogue must be diagnosable, not mistaken for "no products". */
-    console.error("getAllProducts failed", err);
+    console.error(
+      "getAllProducts failed",
+      JSON.stringify({
+        databaseUrlConfigured: Boolean(process.env.DATABASE_URL?.trim()),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        code: (err as any)?.code,
+        message: err instanceof Error ? err.message : String(err),
+      }),
+      err,
+    );
     return [];
+  }
+}
+
+/**
+ * Deployment diagnostic — powers GET /api/health so a store owner can tell
+ * apart "DB not connected" (total=null) from "all products are drafts"
+ * (total>0, visible=0) without reading Vercel logs.
+ */
+export async function getProductDiagnostics(): Promise<{
+  total: number | null;
+  visible: number | null;
+  byStatus: { status: string; count: number }[];
+  error: string | null;
+}> {
+  try {
+    const { sql } = await import("drizzle-orm");
+    const totalRows = await db.execute(sql`select count(*)::int as n from products`);
+    const visibleRows = await db.execute(
+      sql`select count(*)::int as n from products where status = 'active' and visibility = 'online'`,
+    );
+    let byStatus: { status: string; count: number }[] = [];
+    try {
+      const r = await db.execute(
+        sql`select status, count(*)::int as n from products group by status`,
+      );
+      byStatus = (r.rows as { status: string; n: number }[]).map((row) => ({
+        status: String(row.status),
+        count: Number(row.n),
+      }));
+    } catch {
+      /* older DBs always have status — ignore grouping failure */
+    }
+    const first = (rows: unknown): number | null => {
+      const r = (rows as { rows?: { n?: unknown }[] })?.rows?.[0]?.n;
+      const n = Number(r);
+      return Number.isFinite(n) ? n : null;
+    };
+    return {
+      total: first(totalRows),
+      visible: first(visibleRows),
+      byStatus,
+      error: null,
+    };
+  } catch (err) {
+    return {
+      total: null,
+      visible: null,
+      byStatus: [],
+      error: err instanceof Error ? err.message : "unknown database error",
+    };
   }
 }
 
