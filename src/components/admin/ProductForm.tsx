@@ -722,10 +722,22 @@ export default function ProductForm({ initial }: ProductFormProps) {
           Product {saved.status === "draft" ? "draft saved" : "created"} successfully.
         </h2>
         <p className="mt-2 text-sm text-mist">/product/{saved.slug} · Status: {saved.status}</p>
+        {saved.status === "draft" && (
+          <p className="mx-auto mt-3 max-w-md text-xs leading-relaxed text-amber-300/90">
+            This product is saved as a draft, so the public page returns 404 until it is published.
+            Use Preview to check it, then set Status to Active and publish.
+          </p>
+        )}
         <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
-          <Link href={`/product/${saved.slug}`} className="rounded-lg border border-line-soft px-5 py-2.5 text-sm text-mist hover:text-foam">
-            View Product
-          </Link>
+          {saved.status === "draft" ? (
+            <Link href={`/product/${saved.slug}?preview=1`} className="rounded-lg border border-line-soft px-5 py-2.5 text-sm text-mist hover:text-foam">
+              Preview Draft
+            </Link>
+          ) : (
+            <Link href={`/product/${saved.slug}`} className="rounded-lg border border-line-soft px-5 py-2.5 text-sm text-mist hover:text-foam">
+              View Product
+            </Link>
+          )}
           <button
             type="button"
             onClick={() => { resetForm(); router.refresh(); }}

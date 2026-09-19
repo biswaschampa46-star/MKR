@@ -3,7 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, ChevronDown, Check } from "lucide-react";
-import { getProductBySlug, getRelatedProducts } from "@/lib/products";
+import { getProductBySlug, getProductBySlugAny, getRelatedProducts } from "@/lib/products";
 import { effectiveVariants, stockStatusOf, type Product } from "@/db/schema";
 import { bdt, discountPct } from "@/lib/format";
 import PurchasePanel from "@/components/PurchasePanel";
@@ -13,6 +13,7 @@ import Reveal from "@/components/Reveal";
 import TypewriterDescription from "@/components/TypewriterDescription";
 import RatingSummary from "@/components/RatingSummary";
 import ReviewSection from "@/components/ReviewSection";
+import { isAdmin } from "@/lib/auth";
 import { getSiteUrl } from "@/lib/site";
 
 export const dynamic = "force-dynamic";
@@ -75,21 +76,54 @@ function StockBadge({ product }: { product: Product }) {
 
 export default async function ProductPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string }>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { slug } = await params;
-  const product = await getProductBySlug(slug);
-  if (!product) notFound();
+  const sp = searchParams ? await searchParams : undefined;
+  const preview = sp?.preview === "1" || sp?.preview === "true";
+  let product = await getProductBySlug(slug);
+  let isPreview = false;
+  /* Admin preview: let a signed-in admin view draft/hidden products via
+     /product/<slug>?preview=1 (e.g. right after "Save as Draft").
+     Never exposed to shoppers — public page still 404s for non-live rows. */
+  if (!product && preview && (await isAdmin())) {
+    product = await getProductBySlugAny(slug);
+    isPreview = Boolean(product);
+  }
+  /* Diagnostic: the row exists but is not publicly visible (draft / hidden /
+     archived). Log once so Vercel logs explain the 404 instead of silence. */
+  if (!product) {
+    const existing = await getProductBySlugAny(slug);
+    if (existing) {
+      console.warn(
+        `product page 404 for slug="${slug}": row exists but status="${existing.status}" visibility="${existing.visibility}"`,
+      );
+    } else {
+      console.warn(`product page 404 for slug="${slug}": no matching row`);
+    }
+    notFound();
+  }
 
   const related = await getRelatedProducts(product);
   const pct = discountPct(product.price, product.compareAtPrice);
-  const gallery = product.images.length > 0 ? product.images : [{ url: product.image, alt: product.name, order: 0 }];
+  /* Schema-drift fallback rows only carry legacy columns — every newer
+     array/text field was back-filled with defaults in getProductBySlug,
+     but guard anyway so a partial row can never crash the render. */
+  const images = Array.isArray(product.images) ? product.images : [];
+  const gallery = images.length > 0 ? images : [{ url: product.image, alt: product.name, order: 0 }];
   const deliveryText = product.deliveryInfo ||
     "Pay the delivery charge in advance with bKash, Nagad or Rocket — products are paid cash on delivery (or fully in advance if you prefer). Once your advance payment is verified, the order is confirmed and prepared for dispatch. You can follow every step from the order page or the Track Order page.";
 
   return (
     <div className="mx-auto max-w-[1400px] px-6 pb-28 pt-28 md:px-10 md:pt-36">
+      {isPreview && (
+        <p className="adm-badge adm-badge--warn mb-8 inline-block">
+          Draft preview — visible only to admins
+        </p>
+      )}
       <Link
         href="/shop"
         className="group inline-flex items-center gap-3 text-xs uppercase tracking-[0.26em] text-mist transition-colors hover:text-ice"
@@ -171,7 +205,7 @@ export default async function ProductPage({
                 <p className="whitespace-pre-line">{product.description}</p>
               </Accordion>
 
-              {product.features.length > 0 && (
+              {Array.isArray(product.features) && product.features.length > 0 && (
                 <Accordion title="Features">
                   <ul className="space-y-2">
                     {product.features.map((f, i) => (
@@ -184,7 +218,7 @@ export default async function ProductPage({
                 </Accordion>
               )}
 
-              {product.specifications.length > 0 && (
+              {Array.isArray(product.specifications) && product.specifications.length > 0 && (
                 <Accordion title="Specifications">
                   <dl className="overflow-hidden rounded-lg border border-line-soft">
                     {product.specifications.map((s, i) => (
@@ -222,7 +256,7 @@ export default async function ProductPage({
                 </Accordion>
               )}
 
-              {product.tags.length > 0 && (
+              {Array.isArray(product.tags) && product.tags.length > 0 && (
                 <div className="flex flex-wrap gap-2 py-5">
                   {product.tags.map((t) => (
                     <span key={t} className="rounded-full border border-line-soft px-3 py-1 text-xs text-mist/80">

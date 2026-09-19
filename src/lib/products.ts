@@ -14,7 +14,7 @@ export type ProductCard = {
   isFeatured: boolean;
 };
 
-const cardColumns = {
+export const productCardColumns = {
   id: products.id,
   slug: products.slug,
   name: products.name,
@@ -24,6 +24,8 @@ const cardColumns = {
   isNew: products.isNew,
   isFeatured: products.isFeatured,
 } as const;
+
+const cardColumns = productCardColumns;
 
 /** Admin product list row — includes status/stock/organization fields for filters & bulk actions. */
 export type AdminProductRow = ProductCard & {
@@ -73,26 +75,159 @@ export async function getAdminProducts(): Promise<AdminProductRow[]> {
   }
 }
 
+/** Normalize a URL slug for DB lookup: decode, trim, lowercase, collapse spaces. */
+export function normalizeSlug(raw: string): string {
+  try {
+    raw = decodeURIComponent(raw);
+  } catch {
+    /* keep raw when malformed */
+  }
+  return raw.trim().toLowerCase().replace(/\s+/g, "-").replace(/-+/g, "-");
+}
+
 /** Request-memoized: metadata + page share one DB lookup per render. Admin list stays uncached. */
 export const getProductBySlug = cache(async (slug: string): Promise<Product | null> => {
+  const key = normalizeSlug(slug);
+  if (!key) return null;
   try {
+    /* NOTE: `select()` (SELECT *) is intentional here, not cardColumns.
+       The detail page needs the full row (description, images, variants,
+       stock, SEO…). If production Supabase is missing a newer column
+       (schema drift), SELECT * throws — catch it and fall back to a
+       minimal safe projection so the page degrades instead of 404ing. */
     const rows = await db
       .select()
       .from(products)
       .where(
         and(
-          eq(products.slug, slug),
+          eq(products.slug, key),
           eq(products.status, "active"),
           eq(products.visibility, "online"),
         ),
       )
       .limit(1);
-    return rows[0] ?? null;
+    if (rows[0]) return rows[0];
+    /* Exact-match fallback for legacy rows whose slug was saved with
+       different casing/whitespace — keeps old links working. */
+    if (key !== slug) {
+      const legacy = await db.select().from(products).where(
+        and(
+          eq(products.slug, slug),
+          eq(products.status, "active"),
+          eq(products.visibility, "online"),
+        ),
+      ).limit(1);
+      if (legacy[0]) return legacy[0];
+    }
+    return null;
   } catch (err) {
-    console.error("getProductBySlug failed", err);
+    console.error(`getProductBySlug failed for slug="${key}"`, err);
+    /* Schema-drift fallback: project only columns that existed in the
+       original products table (no status/visibility/clothing/rich-content
+       columns). Partial row is cast back to Product; missing fields fall
+       back to schema defaults downstream. */
+    try {
+      const fallback = await db
+        .select({
+          id: products.id,
+          slug: products.slug,
+          name: products.name,
+          description: products.description,
+          material: products.material,
+          price: products.price,
+          compareAtPrice: products.compareAtPrice,
+          image: products.image,
+          isFeatured: products.isFeatured,
+          isNew: products.isNew,
+          stock: products.stock,
+          variants: products.variants,
+          createdAt: products.createdAt,
+        })
+        .from(products)
+        .where(eq(products.slug, key))
+        .limit(1);
+      if (fallback[0]) {
+        return {
+          sku: "",
+          barcode: "",
+          brand: "",
+          category: "",
+          subcategory: "",
+          collection: "",
+          productType: "",
+          shortDescription: "",
+          costPrice: null,
+          taxPct: 0,
+          currency: "BDT",
+          gender: "",
+          clothingType: "",
+          fabric: "",
+          fabricWeight: "",
+          fit: "",
+          pattern: "",
+          season: "",
+          countryOfOrigin: "",
+          sizes: [],
+          colors: [],
+          variantInventory: [],
+          images: [],
+          tags: [],
+          isBestSeller: false,
+          isOnSale: false,
+          status: "active",
+          visibility: "online",
+          trackInventory: false,
+          allowBackorders: true,
+          lowStockThreshold: 0,
+          weightGrams: null,
+          packageWeightGrams: null,
+          lengthCm: null,
+          widthCm: null,
+          heightCm: null,
+          freeShipping: false,
+          sizeRecommendationEnabled: false,
+          shippingClass: "",
+          seoTitle: "",
+          seoDescription: "",
+          seoKeywords: "",
+          canonicalUrl: "",
+          seoImage: "",
+          features: [],
+          specifications: [],
+          warranty: "",
+          returnPolicy: "",
+          deliveryInfo: "",
+          updatedAt: fallback[0].createdAt,
+          ...fallback[0],
+        } as Product;
+      }
+    } catch (fallbackErr) {
+      console.error(`getProductBySlug fallback failed for slug="${key}"`, fallbackErr);
+    }
     return null;
   }
 });
+
+/**
+ * Unfiltered lookup (any status/visibility) — admin preview + diagnostics only.
+ * Never use for the public storefront.
+ */
+export async function getProductBySlugAny(slug: string): Promise<Product | null> {
+  const key = normalizeSlug(slug);
+  if (!key) return null;
+  try {
+    const rows = await db.select().from(products).where(eq(products.slug, key)).limit(1);
+    if (rows[0]) return rows[0];
+    if (key !== slug) {
+      const legacy = await db.select().from(products).where(eq(products.slug, slug)).limit(1);
+      return legacy[0] ?? null;
+    }
+    return null;
+  } catch (err) {
+    console.error(`getProductBySlugAny failed for slug="${key}"`, err);
+    return null;
+  }
+}
 
 export async function getRelatedProducts(product: Product, limit = 3): Promise<ProductCard[]> {
   try {
