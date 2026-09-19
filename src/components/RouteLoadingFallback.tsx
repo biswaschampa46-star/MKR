@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { isBootOrSettling, markNavigationComplete } from "@/lib/loading-store";
 
 /**
@@ -12,12 +13,24 @@ import { isBootOrSettling, markNavigationComplete } from "@/lib/loading-store";
  * experience. During boot and its settle window this renders nothing, and
  * afterwards it shows a lightweight inline placeholder so a slow server
  * navigation still gets brand feedback without the "loader → loader" flash.
+ *
+ * NOTE: markNavigationComplete() updates the loading store, so it must run
+ * in an effect — calling it during render would schedule an update on
+ * another component (OverlayInner) while this one renders, which React
+ * forbids ("Cannot update a component while rendering a different one").
  */
 export default function RouteLoadingFallback({ label }: { label?: string }) {
-  if (isBootOrSettling()) return null;
-  // Real content has arrived; tell the overlay to drop any route-loading
-  // state so the two systems can't queue up back-to-back.
-  markNavigationComplete();
+  const bootSettling = isBootOrSettling();
+
+  useEffect(() => {
+    if (bootSettling) return;
+    // Real content has arrived; tell the overlay to drop any route-loading
+    // state so the two systems can't queue up back-to-back.
+    markNavigationComplete();
+  }, [bootSettling]);
+
+  if (bootSettling) return null;
+
   return (
     <div
       role="status"

@@ -1,6 +1,4 @@
 import { NextResponse } from "next/server";
-import { mkdir, writeFile } from "fs/promises";
-import path from "path";
 import { randomInt } from "crypto";
 import { isAdmin, unauthorized } from "@/lib/auth";
 
@@ -22,11 +20,12 @@ const VIDEO_MAX_BYTES = 50 * 1024 * 1024;
 const STORAGE_BUCKET = "uploads";
 
 /**
- * Server-side Supabase Storage client (service role). Used on hosting
- * platforms (e.g. Vercel) where the filesystem is read-only — files are
- * uploaded to a PUBLIC "uploads" bucket and served from its public URL.
- * Configure SUPABASE_SERVICE_ROLE_KEY to enable; otherwise files fall
- * back to ./public/uploads (localhost / self-hosted with writable disk).
+ * Upload via a service-role client when SUPABASE_SERVICE_ROLE_KEY is set
+ * (production/Vercel). Otherwise — local dev — sign in to Supabase Auth
+ * with the existing ADMIN_EMAIL/ADMIN_PASSWORD credentials and upload as
+ * that authenticated user; the `uploads_admin_insert` RLS policy admits
+ * allow-listed admin emails. No local-disk fallback: Supabase Storage is
+ * the only file store.
  */
 async function uploadToSupabaseStorage(
   name: string,
@@ -34,17 +33,47 @@ async function uploadToSupabaseStorage(
   contentType: string,
 ): Promise<{ url?: string; reason?: string }> {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim();
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
-  if (!url || !serviceKey) return { reason: "unconfigured" };
+  const adminEmail = process.env.ADMIN_EMAIL?.trim();
+  const adminPass = process.env.ADMIN_PASSWORD ?? "";
+  if (!url || !anonKey) return { reason: "unconfigured" };
+  if (!serviceKey && !(adminEmail && adminPass)) return { reason: "unconfigured" };
   try {
     const { createClient } = await import("@supabase/supabase-js");
-    const admin = createClient(url, serviceKey, {
+    if (serviceKey) {
+      const admin = createClient(url, serviceKey, {
+        auth: { persistSession: false, autoRefreshToken: false },
+      });
+      const { error } = await admin.storage.from(STORAGE_BUCKET).upload(name, bytes, {
+        contentType,
+        upsert: true,
+      });
+      if (error) {
+        console.error("supabase storage upload failed", error.message);
+        return { reason: error.message };
+      }
+      return { url: `${url.replace(/\/$/, "")}/storage/v1/object/public/${STORAGE_BUCKET}/${name}` };
+    }
+    // Local dev path: authenticated-admin upload through RLS.
+    const client = createClient(url, anonKey, {
       auth: { persistSession: false, autoRefreshToken: false },
     });
-    const { error } = await admin.storage.from(STORAGE_BUCKET).upload(name, bytes, {
-      contentType,
-      upsert: true,
+    const { error: signInError } = await client.auth.signInWithPassword({
+      email: adminEmail!,
+      password: adminPass,
     });
+    if (signInError) {
+      console.error("supabase storage admin sign-in failed", signInError.message);
+      return { reason: "admin sign-in failed" };
+    }
+    // upsert: false — the RLS policy grants INSERT only, and filenames are
+    // unique (timestamp + random), so overwrite semantics are never needed.
+    const { error } = await client.storage.from(STORAGE_BUCKET).upload(name, bytes, {
+      contentType,
+      upsert: false,
+    });
+    await client.auth.signOut();
     if (error) {
       console.error("supabase storage upload failed", error.message);
       return { reason: error.message };
@@ -78,29 +107,20 @@ export async function POST(request: Request) {
     const name = `${Date.now()}-${randomInt(1000, 9999)}${ext}`;
     const bytes = Buffer.from(await file.arrayBuffer());
 
-    // Preferred: Supabase Storage (works on Vercel / any read-only host).
+    // Supabase Storage is the ONLY backend (no local-disk fallback).
     const remote = await uploadToSupabaseStorage(name, bytes, file.type);
     if (remote.url) {
       return NextResponse.json({ ok: true, url: remote.url });
     }
-
-    // Fallback: writable local disk (localhost / self-hosted VPS only).
-    // On Vercel the filesystem is read-only — require Supabase Storage there.
-    if (process.env.VERCEL === "1") {
-      const hint =
-        remote.reason === "unconfigured"
-          ? "Set SUPABASE_SERVICE_ROLE_KEY in Vercel → Settings → Environment Variables."
-          : "Check that the public 'uploads' bucket exists in Supabase → Storage.";
-      console.error("admin upload on Vercel failed:", remote.reason);
-      return NextResponse.json(
-        { ok: false, message: `Image storage is not ready on the live site. ${hint}` },
-        { status: 503 },
-      );
-    }
-    const dir = path.join(process.cwd(), "public", "uploads");
-    await mkdir(dir, { recursive: true });
-    await writeFile(path.join(dir, name), bytes);
-    return NextResponse.json({ ok: true, url: `/uploads/${name}` });
+    const hint =
+      remote.reason === "unconfigured"
+        ? "Set SUPABASE_SERVICE_ROLE_KEY (production) or NEXT_PUBLIC_SUPABASE_URL + ADMIN_EMAIL/ADMIN_PASSWORD (local) in the server environment."
+        : "Check that the public 'uploads' bucket exists and the admin email is allow-listed in Supabase → Storage policies.";
+    console.error("admin upload failed: storage unavailable:", remote.reason);
+    return NextResponse.json(
+      { ok: false, message: `Image storage is not ready. ${hint}` },
+      { status: 503 },
+    );
   } catch (err) {
     console.error("admin upload failed", err);
     return NextResponse.json({ ok: false, message: "Upload failed." }, { status: 500 });

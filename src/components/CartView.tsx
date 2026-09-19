@@ -53,7 +53,7 @@ export default function CartView({
             {items.map((item) => (
               <li key={item.key} className="flex gap-6 border-b border-line-soft py-8">
                 <Link href={`/product/${item.slug}`} className="media-frame relative block aspect-[4/5] w-24 shrink-0 md:w-28">
-                  <Image src={item.image} alt={item.name} fill sizes="112px" className="object-cover" />
+                  <Image src={item.image || "/images/mkr-logo.jpg"} alt={item.name} fill sizes="112px" className="object-cover" />
                 </Link>
                 <div className="flex min-w-0 flex-1 flex-col">
                   <div className="flex items-start justify-between gap-4">

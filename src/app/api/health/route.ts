@@ -37,9 +37,14 @@ export async function GET() {
         ),
       },
       supabaseStorage: {
+        // Service-role key (production) OR admin credentials (local dev,
+        // uploads go through the uploads_admin_insert RLS policy).
         configured: Boolean(
           process.env.NEXT_PUBLIC_SUPABASE_URL?.trim() &&
-            process.env.SUPABASE_SERVICE_ROLE_KEY?.trim(),
+            (process.env.SUPABASE_SERVICE_ROLE_KEY?.trim() ||
+              (process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim() &&
+                process.env.ADMIN_EMAIL?.trim() &&
+                process.env.ADMIN_PASSWORD)),
         ),
       },
       aiAssistant: {

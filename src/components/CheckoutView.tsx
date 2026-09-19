@@ -552,7 +552,7 @@ export default function CheckoutView({
               {items.map((i) => (
                 <li key={i.key} className="flex items-center gap-4">
                   <div className="media-frame relative h-14 w-11 shrink-0">
-                    <Image src={i.image} alt={i.name} fill sizes="44px" className="object-cover" />
+                    <Image src={i.image || "/images/mkr-logo.jpg"} alt={i.name} fill sizes="44px" className="object-cover" />
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="font-display truncate text-[0.8rem] font-semibold uppercase tracking-[0.05em] text-foam">

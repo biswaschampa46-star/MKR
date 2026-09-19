@@ -187,8 +187,13 @@ function OverlayInner() {
     const origPush = history.pushState.bind(history);
     const origReplace = history.replaceState.bind(history);
     const mark = () => {
-      setRouteActive(true);
-      beginRoute();
+      // Defer: Next.js calls history.replaceState from inside a
+      // useInsertionEffect, where React forbids scheduling updates.
+      // Deferring keeps the loader signal without tripping that invariant.
+      setTimeout(() => {
+        setRouteActive(true);
+        beginRoute();
+      }, 0);
     };
     history.pushState = ((...args: Parameters<typeof origPush>) => {
       mark();

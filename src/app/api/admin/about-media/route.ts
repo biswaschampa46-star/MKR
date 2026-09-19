@@ -1,29 +1,12 @@
 import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { aboutMedia } from "@/db/schema";
-import { desc, eq, ne } from "drizzle-orm";
-import { unlink } from "fs/promises";
-import path from "path";
+import { desc, eq } from "drizzle-orm";
 import { isAdmin, unauthorized } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
 const KINDS = new Set(["image", "video"]);
-
-/** Only unlink files under /uploads/ that no other about-media row still uses. */
-async function cleanupFile(url: string, keepExceptId?: string) {
-  if (!url.startsWith("/uploads/")) return;
-  const rows =
-    keepExceptId !== undefined
-      ? await db.select({ url: aboutMedia.url }).from(aboutMedia).where(ne(aboutMedia.id, keepExceptId))
-      : await db.select({ url: aboutMedia.url }).from(aboutMedia);
-  if (rows.some((r) => r.url === url)) return;
-  try {
-    await unlink(path.join(process.cwd(), "public", url.replace(/^\//, "")));
-  } catch {
-    /* file already gone — fine */
-  }
-}
 
 /** GET /api/admin/about-media — full list for the manager. */
 export async function GET() {
@@ -40,7 +23,9 @@ export async function POST(request: Request) {
     const url = (body.url ?? "").trim();
     const kind = body.kind === "video" ? "video" : "image";
     const alt = (body.alt ?? "").trim().slice(0, 200);
-    if (!url || (!url.startsWith("/uploads/") && !url.startsWith("/images/"))) {
+    /* Storage is Supabase-only: accept hosted https URLs (what /api/admin/upload
+       returns) plus legacy local paths and built-in /images assets. */
+    if (!url || !/^(https?:\/\/|\/uploads\/|\/images\/)/.test(url)) {
       return NextResponse.json({ ok: false, message: "Upload a file first." }, { status: 400 });
     }
     if (!KINDS.has(kind)) {

@@ -278,7 +278,11 @@ export default function ProductsManager({ products }: { products: AdminProductRo
             <li key={p.id} className="flex flex-wrap items-center gap-4 p-4">
               <input type="checkbox" checked={selected.has(p.id)} onChange={() => toggleSelect(p.id)} aria-label={`Select ${p.name}`} className="h-4 w-4 accent-white" />
               <div className="relative h-16 w-14 shrink-0 overflow-hidden rounded-md bg-white/5">
-                <Image src={p.image} alt={p.name} fill sizes="56px" className="object-cover" />
+                {p.image ? (
+                  <Image src={p.image} alt={p.name} fill sizes="56px" className="object-cover" />
+                ) : (
+                  <span className="grid h-full w-full place-items-center text-[10px] text-mist/50">No image</span>
+                )}
               </div>
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-semibold text-foam">{p.name}</p>

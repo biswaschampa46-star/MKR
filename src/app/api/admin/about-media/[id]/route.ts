@@ -1,9 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { aboutMedia } from "@/db/schema";
-import { eq, ne, and } from "drizzle-orm";
-import { unlink } from "fs/promises";
-import path from "path";
+import { eq, ne } from "drizzle-orm";
 import { isAdmin, unauthorized } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
@@ -38,21 +36,6 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
       .where(eq(aboutMedia.id, id))
       .returning();
 
-    /* safe-replace: remove the old upload only after the DB update succeeded */
-    if (existing.url !== updated.url) {
-      const stillUsed = await db
-        .select({ id: aboutMedia.id })
-        .from(aboutMedia)
-        .where(and(ne(aboutMedia.id, id), eq(aboutMedia.url, existing.url)));
-      if (stillUsed.length === 0 && existing.url.startsWith("/uploads/")) {
-        try {
-          await unlink(path.join(process.cwd(), "public", existing.url.replace(/^\//, "")));
-        } catch {
-          /* already gone — fine */
-        }
-      }
-    }
-
     return NextResponse.json({ ok: true, media: updated });
   } catch (err) {
     console.error("about media update failed", err);
@@ -69,16 +52,6 @@ export async function DELETE(_request: Request, { params }: { params: Promise<{ 
     if (!existing) return NextResponse.json({ ok: false, message: "Media not found." }, { status: 404 });
 
     await db.delete(aboutMedia).where(eq(aboutMedia.id, id));
-    if (existing.url.startsWith("/uploads/")) {
-      const stillUsed = await db.select({ id: aboutMedia.id }).from(aboutMedia).where(eq(aboutMedia.url, existing.url));
-      if (stillUsed.length === 0) {
-        try {
-          await unlink(path.join(process.cwd(), "public", existing.url.replace(/^\//, "")));
-        } catch {
-          /* already gone — fine */
-        }
-      }
-    }
 
     return NextResponse.json({ ok: true });
   } catch (err) {

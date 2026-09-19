@@ -136,7 +136,11 @@ export default function SearchOverlay() {
                     className="group flex items-center gap-5 py-4"
                   >
                     <div className="media-frame relative h-16 w-14 shrink-0">
-                      <Image src={p.image} alt={p.name} fill sizes="56px" className="object-cover" />
+                      {p.image ? (
+                        <Image src={p.image} alt={p.name} fill sizes="56px" className="object-cover" />
+                      ) : (
+                        <span className="grid h-full w-full place-items-center text-[10px] text-mist/50">—</span>
+                      )}
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="font-display truncate text-[0.95rem] font-semibold uppercase tracking-[0.06em] text-foam group-hover:text-ice">

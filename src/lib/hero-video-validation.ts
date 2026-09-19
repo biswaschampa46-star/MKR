@@ -50,8 +50,3 @@ function buildValues(
     updatedAt: new Date(),
   };
 }
-
-/** Local storage paths managed by /api/admin/upload (safe to unlink). */
-export function localUploadPath(url: string): string | null {
-  return url.startsWith("/uploads/") ? url : null;
-}

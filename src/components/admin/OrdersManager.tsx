@@ -218,7 +218,11 @@ export default function OrdersManager({ orders: initialOrders }: { orders: Order
                   {o.items.map((item: OrderItem) => (
                     <li key={`${item.productId}-${item.variant}`} className="flex items-center gap-4">
                       <div className="relative h-14 w-12 shrink-0 overflow-hidden rounded-md bg-white/5">
-                        <Image src={item.image} alt={item.name} fill sizes="48px" className="object-cover" />
+                        {item.image ? (
+                          <Image src={item.image} alt={item.name} fill sizes="48px" className="object-cover" />
+                        ) : (
+                          <span className="grid h-full w-full place-items-center text-[10px] text-mist/50">—</span>
+                        )}
                       </div>
                       <p className="flex-1 text-sm text-foam">
                         {item.name} <span className="text-mist">· {variantLabel(item)} × {item.qty}</span>

@@ -1557,6 +1557,9 @@ export default function ProductForm({ initial }: ProductFormProps) {
         {Object.values(fieldErrors).some(Boolean) && (
           <p className="text-xs text-red-300">Fix the highlighted fields above before publishing.</p>
         )}
+        {error && !Object.values(fieldErrors).some(Boolean) && (
+          <p role="alert" className="text-xs text-red-300">{error}</p>
+        )}
       </div>
     </form>
   );

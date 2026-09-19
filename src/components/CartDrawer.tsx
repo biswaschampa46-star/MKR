@@ -92,7 +92,7 @@ export default function CartDrawer({
                 {items.map((item) => (
                   <li key={item.key} className="flex gap-5">
                     <div className="media-frame relative h-24 w-[4.8rem] shrink-0">
-                      <Image src={item.image} alt={item.name} fill sizes="80px" className="object-cover" />
+                      <Image src={item.image || "/images/mkr-logo.jpg"} alt={item.name} fill sizes="80px" className="object-cover" />
                     </div>
                     <div className="flex min-w-0 flex-1 flex-col">
                       <div className="flex items-start justify-between gap-3">
