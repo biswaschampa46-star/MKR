@@ -1119,8 +1119,10 @@ html.lenis-stopped body { overflow: hidden; }
    instead of introducing a widget library look. */
 .mkr-contact-dock {
   position: fixed;
-  right: calc(1rem + env(safe-area-inset-right, 0px));
-  bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+  /* max() keeps a comfortable edge distance even when a device reports a
+     large safe-area inset (landscape home indicator, camera cutout, …). */
+  right: max(1rem, env(safe-area-inset-right, 0px));
+  bottom: max(1rem, env(safe-area-inset-bottom, 0px));
   z-index: 70;
   display: flex;
   flex-direction: column;
@@ -1128,8 +1130,8 @@ html.lenis-stopped body { overflow: hidden; }
 }
 @media (min-width: 640px) {
   .mkr-contact-dock {
-    right: calc(1.5rem + env(safe-area-inset-right, 0px));
-    bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));
+    right: max(1.5rem, env(safe-area-inset-right, 0px));
+    bottom: max(1.5rem, env(safe-area-inset-bottom, 0px));
   }
 }
 
@@ -1220,11 +1222,13 @@ html.lenis-stopped body { overflow: hidden; }
   display: block;
 }
 
-/* Desktop affordance pill — appears only on trigger hover/focus. */
+/* Desktop affordance pill — appears only on trigger hover/focus, and only on
+   devices that actually hover (it overlaps the menu area on touch phones). */
 .mkr-contact-label {
   position: absolute;
   right: calc(100% + 0.75rem);
-  top: 50%;
+  top: auto;
+  bottom: 0.65rem;
   padding: 0.35rem 0.75rem 0.35rem 1.05rem;
   border-radius: 999px;
   border: 1px solid rgba(168, 192, 213, 0.2);
@@ -1235,30 +1239,35 @@ html.lenis-stopped body { overflow: hidden; }
   text-transform: uppercase;
   white-space: nowrap;
   opacity: 0;
-  transform: translate(6px, -50%);
+  transform: translate(6px, 0);
   transition:
     opacity 0.35s var(--ease-brand),
     transform 0.35s var(--ease-brand);
   pointer-events: none;
 }
+@media (hover: none), (pointer: coarse) {
+  .mkr-contact-label { display: none; }
+}
 .mkr-contact-trigger:hover ~ .mkr-contact-label,
 .mkr-contact-trigger:focus-visible ~ .mkr-contact-label {
   opacity: 1;
-  transform: translate(0, -50%);
+  transform: translate(0, 0);
 }
 .mkr-contact-trigger[aria-expanded="true"] ~ .mkr-contact-label {
   opacity: 0;
-  transform: translate(6px, -50%);
+  transform: translate(6px, 0);
 }
 
 /* ── Popover: upward-anchored glass panel (max-height is measured in JS so
-   the panel can clamp itself on short/landscape screens). ── */
+   the panel can clamp itself on short/landscape screens). The menu floats in
+   normal flow ABOVE the trigger (margin-bottom keeps a 12–16px gap) instead
+   of overlapping it, and the wrapper grows with it so nothing can collide. */
 .mkr-contact-menu {
-  position: absolute;
-  right: 0;
-  bottom: calc(100% + 0.7rem);
-  width: min(17.5rem, calc(100vw - 2.5rem));
-  max-width: 100%;
+  /* Percentage widths would resolve against the trigger-sized wrapper, so the
+     menu keeps an explicit stable width capped by the viewport + safe area. */
+  width: min(17.5rem, calc(100vw - 2rem - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px)));
+  max-width: none;
+  margin: 0 0 0.9rem;
   padding: 0.9rem;
   border-radius: 1.5rem;
   border: 1px solid rgba(168, 192, 213, 0.18);
@@ -1272,6 +1281,7 @@ html.lenis-stopped body { overflow: hidden; }
   overscroll-behavior: contain;
   opacity: 0;
   visibility: hidden;
+  /* Fade in with a slight upward travel: translateY(10px) → 0, scale 0.95 → 1. */
   transform: translateY(10px) scale(0.95);
   transition:
     opacity 0.28s var(--ease-brand),
@@ -1294,7 +1304,7 @@ html.lenis-stopped body { overflow: hidden; }
 .mkr-contact-list {
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
+  gap: 0.6rem;
 }
 
 @media (min-width: 640px) {
