@@ -1,0 +1,39 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    env:
+      # Compile-time placeholders only — CI never holds real secrets and no
+      # production service is contacted. DATABASE_URL must parse for the
+      # build to collect page data, so we give it an unreachable-but-valid
+      # URL and let every page fall back to its runtime error state.
+      DATABASE_URL: postgresql://placeholder:placeholder@localhost:5432/placeholder
+      ADMIN_SESSION_SECRET: ci-only-placeholder-secret
+      NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder-anon-key
+      NEXT_PUBLIC_SITE_URL: http://localhost:3000
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build
+        run: npm run build

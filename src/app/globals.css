@@ -1,0 +1,1404 @@
+@import "tailwindcss";
+
+/* ============ MKR DESIGN TOKENS ============ */
+@theme {
+  --color-navy-950: #050b14;
+  --color-navy-900: #071522;
+  --color-navy-850: #0a1d2e;
+  --color-navy-800: #0d263a;
+  --color-navy-700: #12344d;
+  --color-brand-600: #2f8fe8;
+  --color-brand-500: #4da8ff;
+  --color-brand-400: #66b8ff;
+  --color-brand-300: #8ccbff;
+  --color-ice-200: #ddf3ff;
+  --color-ice-100: #f4faff;
+  --color-slate-ice: #a8c0d5;
+  --font-display: var(--font-archivo), ui-sans-serif, system-ui, sans-serif;
+  --font-body: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
+  --font-wordmark: var(--font-archivo), "Times New Roman", serif;
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-brand: cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+:root {
+  --bg-page: #071522;
+  --bg-section: rgba(10, 29, 46, 0.5);
+  --bg-surface: rgba(13, 38, 58, 0.45);
+  --bg-elevated: rgba(18, 52, 77, 0.5);
+  --fg: #f4faff;
+  --fg-muted: #a8c0d5;
+  --fg-soft: #8ccbff;
+  --border-hairline: rgba(168, 192, 213, 0.13);
+  --border-strong: rgba(168, 192, 213, 0.26);
+  --accent: #4da8ff;
+  --accent-soft: #8ccbff;
+  --gutter: clamp(1.25rem, 5vw, 4rem);
+  --section-gap: clamp(5rem, 11vw, 10rem);
+}
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  background:
+    radial-gradient(1100px 560px at 10% -8%, rgba(77, 168, 255, 0.1), transparent 60%),
+    radial-gradient(900px 500px at 100% 4%, rgba(140, 203, 255, 0.07), transparent 55%),
+    linear-gradient(180deg, #050b14 0%, #071522 40%, #081a29 100%);
+  background-attachment: fixed;
+  color: var(--fg);
+  font-family: var(--font-body);
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+h1, h2, h3, h4, .font-display {
+  font-family: var(--font-display);
+  letter-spacing: -0.025em;
+  color: var(--fg);
+}
+
+p, li, span { text-wrap: pretty; }
+
+.wordmark {
+  font-family: var(--font-wordmark);
+  font-weight: 700;
+  letter-spacing: 0.18em;
+}
+
+.display-hero {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(3rem, 10vw, 8.5rem);
+  line-height: 0.95;
+  letter-spacing: -0.03em;
+}
+.display-1 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(2.2rem, 5.5vw, 4.25rem);
+  line-height: 1.02;
+  letter-spacing: -0.028em;
+}
+.display-2 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(1.6rem, 3.6vw, 2.6rem);
+  line-height: 1.08;
+  letter-spacing: -0.025em;
+}
+.eyebrow {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.42em;
+  color: var(--fg-soft);
+}
+
+::selection { background: rgba(77, 168, 255, 0.35); color: #f4faff; }
+
+*:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+img, video { max-width: 100%; }
+
+input, textarea, select { color-scheme: dark; }
+
+.glass {
+  background: linear-gradient(160deg, rgba(221, 243, 255, 0.06), rgba(10, 29, 46, 0.5));
+  border: 1px solid var(--border-hairline);
+  backdrop-filter: blur(14px);
+}
+.glass-strong {
+  background: linear-gradient(150deg, rgba(221, 243, 255, 0.1), rgba(7, 21, 34, 0.85));
+  border: 1px solid rgba(168, 192, 213, 0.18);
+  backdrop-filter: blur(18px);
+}
+.surface {
+  background: linear-gradient(165deg, rgba(13, 38, 58, 0.45), rgba(7, 21, 34, 0.55));
+  border: 1px solid var(--border-hairline);
+}
+.hairline { border-color: var(--border-hairline); }
+.text-muted { color: var(--fg-muted); }
+.gradient-text {
+  background: linear-gradient(92deg, #f4faff 0%, #8ccbff 48%, #4da8ff 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.text-outline {
+  color: transparent;
+  -webkit-text-stroke: 1px rgba(168, 192, 213, 0.4);
+}
+
+.full-bleed { margin-inline: calc(var(--gutter) * -1); }
+.section-gap { margin-top: var(--section-gap); }
+
+.meta-label {
+  font-size: 0.625rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.32em;
+  color: var(--fg-soft);
+}
+.meta-label-muted {
+  font-size: 0.625rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.32em;
+  color: rgba(168, 192, 213, 0.65);
+}
+.hairline-t { border-top: 1px solid var(--border-hairline); }
+.hairline-b { border-bottom: 1px solid var(--border-hairline); }
+.spec-index {
+  font-family: var(--font-display);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  color: rgba(140, 203, 255, 0.55);
+  font-variant-numeric: tabular-nums;
+}
+
+.premium-hover {
+  transition: transform 0.45s var(--ease-brand), border-color 0.45s ease, background 0.45s ease;
+}
+
+/* ═══════════ GHOST WATERMARK (mobile dock band) ═══════════
+   Oversized outlined "MKR" sitting behind the floating garment stack —
+   a whisper, not a label. Desktop keeps the clean statement layout. */
+.peek-watermark {
+  display: none;
+  z-index: 0;
+  font-weight: 600;
+  font-size: clamp(5.5rem, 34vw, 9rem);
+  line-height: 1;
+  letter-spacing: 0.04em;
+  color: transparent;
+  -webkit-text-stroke: 1px rgba(168, 192, 213, 0.14);
+}
+@media (max-width: 768px) {
+  .peek-watermark {
+    display: block;
+    background-image: linear-gradient(
+      110deg,
+      rgba(168, 192, 213, 0.08) 0%,
+      rgba(168, 192, 213, 0.16) 34%,
+      rgba(221, 243, 255, 0.42) 50%,
+      rgba(168, 192, 213, 0.16) 66%,
+      rgba(168, 192, 213, 0.08) 100%
+    );
+    background-size: 240% 100%;
+    background-position: 100% 0;
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-stroke: 1px rgba(168, 192, 213, 0.14);
+    animation:
+      mkr-watermark-shimmer 9s ease-in-out infinite,
+      mkr-watermark-breathe 7s ease-in-out infinite;
+    will-change: background-position, opacity;
+  }
+  .mkr-particle-layer {
+    position: fixed;
+    left: 0;
+    top: 0;
+    z-index: 3;
+    display: block;
+    visibility: visible;
+    opacity: 1;
+    pointer-events: none;
+    contain: layout paint;
+    will-change: transform;
+  }
+}
+
+/* Left → center → right → center → left light sweep on the mobile outline.
+   Its intensity falls away naturally as the wordmark's opacity dissolves. */
+@keyframes mkr-watermark-shimmer {
+  0%, 12% {
+    background-position: 100% 0;
+  }
+  50%, 62% {
+    background-position: 0% 0;
+  }
+  100% {
+    background-position: 100% 0;
+  }
+}
+
+@keyframes mkr-watermark-breathe {
+  0%, 100% { opacity: calc(0.72 * (1 - var(--mkr-dissolve, 0))); }
+  50% { opacity: calc(1 * (1 - var(--mkr-dissolve, 0))); }
+}
+
+/* Serif accent: quiet italic pull-quote moments inside body copy. */
+.serif-accent {
+  font-family: Georgia, "Times New Roman", serif;
+  font-style: italic;
+  color: #ddf3ff;
+  letter-spacing: 0.01em;
+}
+.premium-hover:hover {
+  transform: translateY(-4px);
+  border-color: rgba(140, 203, 255, 0.38);
+}
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* ═════════════════ PREMIUM SCROLLBAR ═════════════════
+   Slim navy track, rounded brand-blue thumb, subtle hover glow.
+   Firefox uses scrollbar-color; WebKit/Blink get the full treatment. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(77, 168, 255, 0.35) transparent;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(77, 168, 255, 0.45), rgba(47, 143, 232, 0.45));
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, rgba(140, 203, 255, 0.7), rgba(77, 168, 255, 0.7));
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+.h-tray { scroll-snap-type: x proximity; -webkit-overflow-scrolling: touch; }
+.h-tray > * { scroll-snap-align: start; }
+
+/* ══════════  PROGRESSIVE-ENHANCEMENT REVEAL GATE  ══════════
+   Hidden initial states apply ONLY under `html.js` — the class added by an
+   inline script before first paint. Without JavaScript, or with JS blocked,
+   every [data-reveal] target stays fully visible: the animation enhances,
+   it never gates content (audit Phase 7). */
+.js [data-reveal] {
+  opacity: 0;
+  transform: translateY(34px);
+  transition:
+    opacity 1s var(--ease-out-expo),
+    transform 1s var(--ease-out-expo);
+  transition-delay: var(--reveal-delay, 0ms);
+  will-change: opacity, transform;
+}
+.js [data-reveal="scale"] { transform: translateY(30px) scale(0.97); }
+.js [data-reveal="left"] { transform: translateX(-40px); }
+.js [data-reveal="right"] { transform: translateX(40px); }
+[data-reveal].is-revealed {
+  opacity: 1;
+  transform: none;
+  will-change: auto;
+}
+
+[data-reveal="clip"] {
+  opacity: 1;
+  transform: none;
+  clip-path: inset(12% 6% 12% 6% round 24px);
+  transition: clip-path 1.4s var(--ease-out-expo);
+  transition-delay: var(--reveal-delay, 0ms);
+}
+[data-reveal="clip"].is-revealed { clip-path: inset(0 0 0 0 round 24px); }
+
+/* ══════════  EDITORIAL SLIDE ENTRANCE (product gallery)  ══════════
+   The IMAGE slides in from alternating horizontal directions while the
+   text block softly rises afterwards. Only the image wrapper travels —
+   clipped by the image container's overflow-hidden, so the page never
+   overflows horizontally. Luxury easing, 950ms, heavy and cinematic.
+   Direction comes from data-editorial-from (left/right by grid index). */
+/* Editorial initial states — gated on .js like the base reveal (Phase 7). */
+.js [data-editorial-image] {
+  opacity: 0;
+  transform: translateX(calc(-1 * var(--editorial-distance, 120px))) scale(0.96);
+  will-change: transform, opacity;
+  transition:
+    transform 0.95s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.75s cubic-bezier(0.22, 1, 0.36, 1);
+  transition-delay: var(--reveal-delay, 0ms);
+}
+.js [data-editorial-from="right"] [data-editorial-image] {
+  transform: translateX(var(--editorial-distance, 120px)) scale(0.96);
+}
+/* Text block: soft upward fade, delayed until the image has mostly settled. */
+.js [data-editorial-text] {
+  opacity: 0;
+  transform: translateY(14px);
+  transition:
+    transform 0.7s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+  transition-delay: calc(var(--reveal-delay, 0ms) + 260ms);
+}
+/* Revealed: image glides to centre, text follows. */
+[data-reveal="editorial"].is-revealed [data-editorial-image] {
+  opacity: 1;
+  transform: translateX(0) scale(1);
+  will-change: auto;
+}
+[data-reveal="editorial"].is-revealed [data-editorial-text] {
+  opacity: 1;
+  transform: translateY(0);
+}
+/* Card shell itself stays put — only the image/text layers animate. */
+[data-reveal="editorial"] {
+  opacity: 1;
+  transform: none;
+}
+/* Mobile: narrower frame → shorter travel distance. */
+@media (max-width: 768px) {
+  [data-editorial-image] {
+    --editorial-distance: 64px;
+  }
+}
+@media (min-width: 769px) and (max-width: 1024px) {
+  [data-editorial-image] {
+    --editorial-distance: 90px;
+  }
+}
+.media-settle {
+  transform: scale(1.07);
+  transition: transform 1.8s var(--ease-out-expo);
+}
+.is-revealed .media-settle { transform: scale(1); }
+
+/* ══════════  EDITORIAL STATEMENT — WORD FADE-UP  ══════════
+   Per-word rise + de-blur — the mkr-hero-fade idiom applied word by word,
+   driven entirely by the existing [data-reveal] IntersectionObserver (no new
+   JS, no second observer). Without html.js, or under prefers-reduced-motion,
+   every word stays fully visible. Transform/opacity/filter only, one-shot,
+   no layout shift: word boxes are inline-block at baseline, so line breaking
+   and advance widths are unchanged from the plain sentence. */
+.statement-word { display: inline-block; }
+.js .statement-word {
+  opacity: 0;
+  transform: translateY(22px) scale(0.985);
+  filter: blur(6px);
+  transition:
+    opacity 0.75s var(--ease-out-expo),
+    transform 0.95s var(--ease-out-expo),
+    filter 0.9s var(--ease-out-expo);
+  transition-delay: var(--word-delay, 0ms);
+  will-change: opacity, transform, filter;
+}
+.js [data-reveal].is-revealed .statement-word {
+  opacity: 1;
+  transform: none;
+  filter: blur(0);
+  will-change: auto;
+}
+
+/* "presence," — one highlight band travelling through the same ice→brand-blue
+   family on a very slow 8s ease, so the word reads as material catching light
+   rather than as a banner asking for attention. */
+@keyframes mkr-presence-sheen {
+  0%, 100% { background-position: 100% 0; }
+  50% { background-position: 0% 0; }
+}
+.statement-sheen {
+  background-image: linear-gradient(100deg, #8ccbff 0%, #ddf3ff 24%, #f4faff 38%, #8ccbff 58%, #4da8ff 100%);
+  background-size: 200% 100%;
+  background-position: 100% 0;
+  -webkit-background-clip: text;
+  background-clip: text;
+  animation: mkr-presence-sheen 8s ease-in-out infinite;
+}
+
+@keyframes mkr-hero-rise {
+  from { transform: translateY(115%); }
+  to { transform: translateY(0); }
+}
+@keyframes mkr-hero-fade {
+  from { opacity: 0; transform: translateY(18px); filter: blur(6px); }
+  to { opacity: 1; transform: translateY(0); filter: blur(0); }
+}
+@keyframes mkr-media-reveal {
+  from { transform: scale(1.08); opacity: 0.35; }
+  to { transform: scale(1); opacity: 1; }
+}
+@keyframes mkr-scroll-line {
+  0% { transform: scaleY(0); transform-origin: top; }
+  45% { transform: scaleY(1); transform-origin: top; }
+  55% { transform: scaleY(1); transform-origin: bottom; }
+  100% { transform: scaleY(0); transform-origin: bottom; }
+}
+
+.hero-line { display: block; overflow: hidden; }
+.hero-line > span {
+  display: block;
+  animation: mkr-hero-rise 1.1s var(--ease-out-expo) both;
+  animation-delay: var(--line-delay, 0ms);
+}
+.hero-fade {
+  animation: mkr-hero-fade 1s var(--ease-brand) both;
+  animation-delay: var(--line-delay, 0ms);
+}
+
+.media-reveal {
+  animation: mkr-media-reveal 1.8s var(--ease-out-expo) both;
+  animation-delay: var(--line-delay, 100ms);
+}
+.media-reveal[data-reveal] {
+  animation: none;
+}
+.js .media-reveal[data-reveal] {
+  opacity: 0;
+  transform: scale(1.08);
+  transition:
+    transform 1.8s var(--ease-out-expo),
+    opacity 1.4s ease;
+  transition-delay: var(--line-delay, 100ms);
+}
+.media-reveal[data-reveal].is-revealed { opacity: 1; transform: scale(1); }
+
+[data-parallax] {
+  will-change: transform;
+  transform: translate3d(0, var(--parallax-y, 0px), 0);
+}
+
+/* ══════════ FLOATING PRODUCT PEEK (jeans + shirt) ══════════
+   Fixed to the LEFT viewport edge, fully outside it when hidden
+   (translateX drives it, so it never widens the document — no
+   horizontal overflow). Transparent cutout only: no box, no card,
+   no border, no background, no text. pointer-events:none so it can
+   never cover nav, buttons, or headings. z-40 sits under the
+   sticky header (z-50). JS in smooth-scroll.tsx owns the transform;
+   this file owns only placement, size, and safety. */
+.peek-jeans {
+  position: fixed;
+  left: 0;
+  top: 54%;
+  z-index: 40;
+  width: clamp(300px, 34vw, 520px);
+  transform: translateY(-50%);
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  overflow: clip;
+  /* Stage for the product's 3D yaw — no visual box, just depth. */
+  perspective: 1200px;
+  perspective-origin: 30% 50%;
+  /* Stack all cutouts in one cell so they share a footprint. */
+  display: grid;
+}
+/* Right-dock variant (admin-selectable): mirror the placement; the JS
+   drives mirrored transforms when body[data-peek-side="right"] is set. */
+.peek-jeans.peek-jeans--right {
+  left: auto;
+  right: 0;
+  perspective-origin: 70% 50%;
+}
+/* will-change only while the peek is live (toggled by JS). */
+.peek-jeans.is-live { will-change: opacity; }
+.peek-jeans-item {
+  grid-area: 1 / 1;
+  transform-style: preserve-3d;
+}
+.peek-jeans.is-live .peek-jeans-item {
+  will-change: transform, filter, opacity;
+}
+.peek-jeans-item--lead {
+  z-index: 1;
+}
+.peek-jeans-item--follow {
+  z-index: 2;
+}
+.peek-jeans-item--shirt {
+  z-index: 3;
+}
+.peek-jeans img {
+  display: block;
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+  background: transparent;
+  border: 0;
+  /* Lift the dark denim off the dark navy page without a box or glow:
+     tight contact shadow + soft ambient + hairline cool rim so the
+     silhouette always reads as a floating product cutout. */
+  filter:
+    drop-shadow(2px 10px 14px rgba(0, 0, 0, 0.65))
+    drop-shadow(0 28px 46px rgba(0, 0, 0, 0.5))
+    drop-shadow(-1px 0 0 rgba(221, 243, 255, 0.14));
+}
+/* Tablet: keep the product body clearly visible (not an edge sliver). */
+@media (max-width: 1024px) and (min-width: 769px) {
+  .peek-jeans {
+    width: clamp(280px, 36vw, 400px);
+  }
+}
+/* Mobile dock: the whole garment stack sits centered in the empty band
+   above the headline (see smooth-scroll.tsx) — fully on-screen, never
+   sliced by the viewport edge. overflow:visible so items docked above the
+   container box still paint; no document overflow (fixed positioning). */
+@media (max-width: 768px) {
+  .peek-jeans {
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: clamp(170px, 46vw, 230px);
+    overflow: visible;
+  }
+  /* Phones dock a single centered stack — the right twin never shows. */
+  .peek-jeans--right {
+    display: none;
+  }
+  /* Real dock band: generous empty space between the marquee and the
+     statement eyebrow so the garment stack docks at full size with
+     breathing room instead of squeezing against the type. */
+  [data-peek-zone] {
+    padding-top: clamp(260px, 80vw, 330px);
+  }
+  /* Premium stage: soft spotlight pool above a contact-shadow floor so
+     the stack reads as lit product on a pedestal, not a floating PNG. */
+  .peek-stage {
+    position: absolute;
+    left: 50%;
+    top: 100%;
+    width: 190%;
+    height: 60px;
+    transform: translateX(-50%);
+    pointer-events: none;
+  }
+  .peek-stage {
+    display: none;
+  }
+  .peek-stage::before {
+    content: none;
+  }
+  .peek-stage::after {
+    content: none;
+  }
+}
+/* ═══════════════  MOBILE HERO IMAGE  ═══════════════
+   ONE admin-uploaded garment shot on phones — the desktop floating
+   shirt+pants peek composition never mounts on mobile (see
+   smooth-scroll.tsx). Hidden ≥769px so desktop is pixel-identical. */
+.mobile-hero-mount {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .mobile-hero-mount {
+    display: block;
+  }
+  .mobile-hero-frame {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    /* Breathing room for the safe areas; type anchors to the bottom. */
+    padding: clamp(4.5rem, 18vw, 7rem) var(--gutter) clamp(9rem, 30vw, 12rem);
+  }
+  .mobile-hero-img {
+    /* contain: the product is never cropped — centered, clearly visible,
+       enough size on narrow phones without excess empty space. */
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    will-change: transform, opacity;
+    transform: translate3d(0, var(--hero-parallax, 0px), 0);
+    filter:
+      drop-shadow(2px 10px 14px rgba(0, 0, 0, 0.65))
+      drop-shadow(0 28px 46px rgba(0, 0, 0, 0.5))
+      drop-shadow(-1px 0 0 rgba(221, 243, 255, 0.14));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mobile-hero-img {
+    opacity: 1 !important;
+    transform: none !important;
+    will-change: auto;
+  }
+}
+
+/* ═══════════════  RESPONSIVE HERO VIDEO  ═══════════════
+   Two overlapping stage elements (HeroMedia): <img> for stills, <video> for
+   film. The viewport resolves which one receives the source, so only the
+   chosen file downloads. Desktop keeps the full-bleed 16:9 stage; mobile
+   composes the admin-selected portrait ratio (9:16/2:3/4:5/1:1).
+   object-cover preserves composition without distortion; overlays/typography
+   sit on top exactly as before. */
+.hero-media {
+  position: absolute;
+  inset: 0;
+}
+.hero-media-el {
+  /* Both stages (image + video) share the same box. */
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: opacity 0.6s ease;
+}
+/* Mobile: compose by the admin-selected ratio. The container keeps the
+   full-bleed hero height; the media fills it with cover (no stretching,
+   no letterboxing) while data-hero-ratio lets the admin tune the crop. */
+@media (max-width: 768px) {
+  .hero-media[data-hero-mobile="1"][data-hero-kind="video"] {
+    /* Portrait video is inset slightly so the cinematic gradients and
+       typography keep their breathing room on tall screens. */
+    inset: 0;
+  }
+  .hero-media[data-hero-mobile="1"][data-hero-kind="video"] .hero-media-el {
+    object-position: center 30%;
+  }
+  /* Portrait stills get the same crop bias as portrait video so the subject
+     stays in frame on tall phones. */
+  .hero-media[data-hero-mobile="1"][data-hero-kind="image"] .hero-media-el {
+    object-position: center 30%;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-media-el {
+    transition: none;
+  }
+}
+
+.scroll-indicator-line {
+  animation: mkr-scroll-line 2.2s var(--ease-brand) infinite;
+}
+
+@keyframes mkr-marquee {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(-50%, 0, 0); }
+}
+.marquee-track {
+  display: flex;
+  width: max-content;
+  animation: mkr-marquee 36s linear infinite;
+  will-change: transform;
+}
+.marquee-paused:hover .marquee-track { animation-play-state: paused; }
+
+@keyframes mkr-spin { to { transform: rotate(360deg); } }
+@keyframes mkr-sheen {
+  from { background-position: -200% 0; }
+  to { background-position: 200% 0; }
+}
+@keyframes mkr-badge-pop {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.25); }
+  100% { transform: scale(1); }
+}
+
+.animate-badge-pop { animation: mkr-badge-pop 0.45s var(--ease-brand); }
+
+.skeleton {
+  background: linear-gradient(90deg, rgba(168, 192, 213, 0.08) 25%, rgba(168, 192, 213, 0.18) 37%, rgba(168, 192, 213, 0.08) 63%);
+  background-size: 200% 100%;
+  animation: mkr-sheen 1.4s ease-in-out infinite;
+}
+
+/* ═══════════════  DROPDOWN / PANEL SYSTEM  ═══════════════
+   One premium system for every disclosure UI: selects, expandable
+   panels, admin menus. CSS-only (opacity + transform), fast and
+   minimal — no layout animation, no blur, no bounce. */
+
+/* Native select: chevron rotates while the option sheet is open.
+   The React state hook (mkr-select-chevron-open) is the reliable open
+   signal across browsers; the :focus fallback covers keyboard users.
+   Uses the individual `rotate` property so it composes cleanly with the
+   Tailwind translate utility that centres the icon. */
+.mkr-select-shell .mkr-select-chevron-open,
+.mkr-select-shell select:focus + .mkr-select-chevron,
+.mkr-select-shell select:active + .mkr-select-chevron {
+  rotate: 180deg;
+  color: #8ccbff;
+}
+
+/* Custom listbox popup (mkr_select) — the premium replacement for the
+   OS-rendered native option sheet. Opacity + transform only, brand easing. */
+.mkr-select-pop {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  z-index: 40;
+  max-height: 240px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 6px;
+  border-radius: 18px;
+  border: 1px solid rgba(168, 192, 213, 0.25);
+  background: rgba(11, 38, 61, 0.97);
+  box-shadow:
+    0 24px 60px -24px rgba(0, 0, 0, 0.75),
+    inset 0 1px 0 rgba(140, 203, 255, 0.08);
+  backdrop-filter: blur(14px);
+  animation: mkr-panel-in 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.mkr-select-pop-up {
+  top: auto;
+  bottom: calc(100% + 8px);
+  animation-name: mkr-panel-in-up;
+}
+.mkr-select-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.55rem 0.75rem;
+  border-radius: 12px;
+  color: #f4faff;
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+.mkr-select-option-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mkr-select-option-active {
+  background: rgba(140, 203, 255, 0.1);
+  color: #8ccbff;
+}
+.mkr-select-option-selected {
+  color: #8ccbff;
+}
+.mkr-select-option-disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Slim brand scrollbar inside the listbox sheet. */
+.mkr-select-pop::-webkit-scrollbar {
+  width: 6px;
+}
+.mkr-select-pop::-webkit-scrollbar-track {
+  background: transparent;
+}
+.mkr-select-pop::-webkit-scrollbar-thumb {
+  background: rgba(140, 203, 255, 0.25);
+  border-radius: 999px;
+}
+.mkr-select-pop {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(140, 203, 255, 0.25) transparent;
+}
+
+@keyframes mkr-panel-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ═══ Boot animation — MKR wordmark entrance (see LoadingCoordinator) ═══ */
+.mkr-boot-overlay {
+  opacity: 1;
+  transition: opacity 0.5s ease;
+}
+.mkr-boot-overlay-out {
+  opacity: 0;
+  transition: opacity 0.55s ease;
+  pointer-events: none;
+}
+@keyframes mkr-boot-letter {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+    filter: blur(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+}
+.mkr-boot-letter {
+  display: inline-block;
+  opacity: 0;
+  animation: mkr-boot-letter 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* The boot line now literally fills left → right with a glowing comet
+   head riding its leading edge — the brand moment reads as real loading. */
+.mkr-boot-line {
+  border-radius: 999px;
+}
+
+@keyframes mkr-boot-fill {
+  0% {
+    width: 0%;
+  }
+  60% {
+    width: 70%;
+  }
+  100% {
+    width: 100%;
+  }
+}
+.mkr-boot-fill {
+  position: relative;
+  height: 100%;
+  width: 0%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(140, 203, 255, 0.2), rgba(140, 203, 255, 0.75));
+  box-shadow: 0 0 8px 1px rgba(140, 203, 255, 0.35);
+  animation: mkr-boot-fill 1.1s cubic-bezier(0.3, 0.6, 0.3, 1) 0.45s forwards;
+}
+
+@keyframes mkr-boot-tagline {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+    letter-spacing: 0.62em;
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    letter-spacing: 0.42em;
+  }
+}
+.mkr-boot-tagline {
+  opacity: 0;
+  animation: mkr-boot-tagline 0.9s cubic-bezier(0.22, 1, 0.36, 1) 0.75s forwards;
+}
+
+@keyframes mkr-boot-glow {
+  from {
+    opacity: 0;
+    transform: scale(0.85);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+.mkr-boot-glow {
+  opacity: 0;
+  animation: mkr-boot-glow 1.4s ease-out 0.2s forwards;
+}
+
+/* ═══ Route-transition LOADING pill (see LoadingCoordinator) ═══ */
+@keyframes mkr-pill-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 10px) scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+}
+.mkr-loading-pill {
+  animation: mkr-pill-in 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes mkr-sheen-text {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+.mkr-loading-text {
+  background: linear-gradient(100deg, #8ccbff 30%, #eaf6ff 50%, #8ccbff 70%);
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  animation: mkr-sheen-text 1.3s linear infinite;
+}
+
+/* Top route-transition progress bar — the line fills across the full path
+   while a glowing comet head rides its leading edge. */
+@keyframes mkr-progress-fill {
+  0% {
+    width: 0%;
+  }
+  55% {
+    width: 68%;
+  }
+  80% {
+    width: 88%;
+  }
+  100% {
+    width: 100%;
+  }
+}
+.mkr-progress-fill {
+  position: relative;
+  height: 100%;
+  width: 0%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(140, 203, 255, 0.2), rgba(140, 203, 255, 0.75));
+  box-shadow: 0 0 10px 1px rgba(140, 203, 255, 0.35);
+  animation: mkr-progress-fill 1.05s cubic-bezier(0.3, 0.6, 0.3, 1) forwards;
+}
+
+@keyframes mkr-comet-pulse {
+  0%,
+  100% {
+    opacity: 0.75;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+.mkr-progress-comet {
+  position: absolute;
+  right: -2px;
+  top: 0;
+  height: 100%;
+  width: 34px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent, rgba(140, 203, 255, 0.9) 45%, #eaf6ff 85%, transparent);
+  box-shadow:
+    0 0 12px 2px rgba(140, 203, 255, 0.6),
+    0 0 26px 6px rgba(77, 168, 255, 0.28);
+  animation: mkr-comet-pulse 0.9s ease-in-out infinite;
+}
+
+/* Expandable disclosure panels (size help, chart, cancellation, etc.):
+   rendered via mount/unmount, so a short entrance animation runs on
+   open; closing is instant (no delayed unmount machinery). */
+@keyframes mkr-panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.mkr-panel {
+  animation: mkr-panel-in 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* FAQ summaries: chevron affordance + open state. */
+details.mkr-faq > summary .mkr-faq-chevron {
+  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+details.mkr-faq[open] > summary .mkr-faq-chevron {
+  transform: rotate(180deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .peek-watermark {
+    animation: none !important;
+    opacity: 1;
+  }
+  .mkr-panel {
+    animation: none;
+  }
+  .mkr-select-chevron,
+  .mkr-faq-chevron {
+    transition: none !important;
+  }
+}
+
+.site-header {
+  transition: background 0.45s ease, border-color 0.45s ease, box-shadow 0.45s ease;
+  border-bottom: 1px solid transparent;
+  background: transparent;
+}
+.site-header.is-scrolled {
+  background: rgba(7, 21, 34, 0.9);
+  border-bottom-color: var(--border-hairline);
+  box-shadow: 0 12px 40px -26px rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(16px);
+}
+
+html.lenis-stopped,
+html.lenis-stopped body { overflow: hidden; }
+
+.lens-wrap { position: relative; overflow: hidden; }
+.lens-wrap img { transition: transform 0.2s ease-out; }
+.lens-glass {
+  position: absolute;
+  width: 11rem;
+  height: 11rem;
+  border-radius: 9999px;
+  border: 1px solid rgba(140, 203, 255, 0.45);
+  pointer-events: none;
+  background-repeat: no-repeat;
+  box-shadow: 0 8px 32px -12px rgba(0, 0, 0, 0.6);
+  z-index: 10;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+  [data-reveal],
+  [data-editorial-image],
+  [data-editorial-text],
+  .hero-line > span,
+  .hero-fade,
+  .media-reveal {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+    filter: none !important;
+    clip-path: none !important;
+  }
+  .statement-word {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+    filter: none !important;
+  }
+  .statement-sheen {
+    animation: none !important;
+    background-position: 0% 0;
+  }
+  [data-parallax] { transform: none !important; }
+  /* Peek stays visible (instant snap in JS) — no decorative motion. */
+  .peek-jeans { will-change: auto !important; }
+  .peek-jeans .peek-jeans-item {
+    will-change: auto !important;
+    filter: none !important;
+  }
+  .marquee-track,
+  .scroll-indicator-line { animation: none !important; }
+  /* Boot overlay + loading pill + listbox: instant, fully visible, no motion. */
+  .mkr-boot-letter,
+  .mkr-boot-line,
+  .mkr-boot-tagline,
+  .mkr-boot-glow {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+    filter: none !important;
+  }
+  .mkr-boot-fill {
+    animation: none !important;
+    width: 100% !important;
+  }
+  .mkr-boot-tagline { letter-spacing: 0.42em !important; }
+  .mkr-loading-pill,
+  .mkr-select-pop,
+  .mkr-select-pop-up { animation: none !important; }
+  .mkr-progress-comet {
+    animation: none !important;
+    opacity: 0.9;
+  }
+  .mkr-progress-fill {
+    animation: none !important;
+    width: 100% !important;
+  }
+  .mkr-loading-text {
+    animation: none !important;
+    background: none !important;
+    -webkit-text-fill-color: #8ccbff !important;
+    color: #8ccbff !important;
+  }
+}
+
+/* ═══════════════  FLOATING CONTACT DOCK  ═══════════════
+   Always-visible contact access point (Instagram / Facebook / WhatsApp).
+   Fixed bottom-right and safe-area aware; it keeps `position: fixed` during
+   scroll (never hidden on scroll) and sits UNDER every overlay — mobile nav
+   z-[80], cart drawer z-[90], assistant z-[95], boot overlay z-[100] — so the
+   dock can never trap focus or cover navigation / cart UI. Geometry and
+   colours reuse the MKR tokens (navy glass, hairline border, brand gradient)
+   instead of introducing a widget library look. */
+.mkr-contact-dock {
+  position: fixed;
+  right: calc(1rem + env(safe-area-inset-right, 0px));
+  bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+  z-index: 70;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+@media (min-width: 640px) {
+  .mkr-contact-dock {
+    right: calc(1.5rem + env(safe-area-inset-right, 0px));
+    bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+/* Gentle float — the whole dock (trigger + panel) drifts as one unit. */
+.mkr-contact-float {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  animation: mkr-contact-float 8s var(--ease-brand) infinite;
+}
+@keyframes mkr-contact-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+
+/* ── Trigger: dark glass/metal tile with the MKR monogram. ── */
+.mkr-contact-trigger {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 3.1rem;
+  height: 3.1rem;
+  border-radius: 1.15rem;
+  border: 1px solid rgba(168, 192, 213, 0.22);
+  background:
+    linear-gradient(152deg, rgba(221, 243, 255, 0.14), rgba(7, 21, 34, 0.92) 58%),
+    #0a1d2e;
+  color: #ddf3ff;
+  box-shadow:
+    0 18px 38px -22px rgba(0, 0, 0, 0.95),
+    0 0 22px -14px rgba(77, 168, 255, 0.7),
+    inset 0 1px 0 rgba(221, 243, 255, 0.16);
+  transition:
+    transform 0.4s var(--ease-brand),
+    border-color 0.4s ease,
+    box-shadow 0.4s ease,
+    color 0.4s ease;
+}
+/* No backdrop-filter on the trigger: it sits over scrolling content on
+   phones, and a live blur there costs a repaint every scroll frame. */
+@media (min-width: 640px) {
+  .mkr-contact-trigger {
+    width: 3.35rem;
+    height: 3.35rem;
+    border-radius: 1.25rem;
+  }
+}
+.mkr-contact-trigger::before {
+  content: "";
+  position: absolute;
+  inset: 1px;
+  border-radius: inherit;
+  background: linear-gradient(125deg,
+    rgba(221, 243, 255, 0.28) 0%,
+    rgba(221, 243, 255, 0) 42%,
+    rgba(221, 243, 255, 0) 62%,
+    rgba(140, 203, 255, 0.22) 100%);
+  opacity: 0.55;
+  transition: opacity 0.4s ease;
+  pointer-events: none;
+}
+.mkr-contact-trigger:hover,
+.mkr-contact-trigger:focus-visible {
+  transform: translateY(-2px) scale(1.05);
+  border-color: rgba(140, 203, 255, 0.5);
+  color: #f4faff;
+  box-shadow:
+    0 22px 44px -22px rgba(0, 0, 0, 0.95),
+    0 0 30px -8px rgba(77, 168, 255, 0.55),
+    inset 0 1px 0 rgba(221, 243, 255, 0.22);
+}
+.mkr-contact-trigger:hover::before,
+.mkr-contact-trigger:focus-visible::before { opacity: 0.95; }
+.mkr-contact-trigger:active {
+  transform: scale(0.955);
+  transition-duration: 0.12s;
+}
+.mkr-contact-trigger:focus-visible {
+  border-radius: 1.15rem;
+  outline-offset: 3px;
+}
+.mkr-contact-trigger[aria-expanded="true"] { border-color: rgba(140, 203, 255, 0.55); }
+.mkr-contact-mark {
+  position: relative;
+  width: 1.85rem;
+  height: auto;
+  display: block;
+}
+
+/* Desktop affordance pill — appears only on trigger hover/focus. */
+.mkr-contact-label {
+  position: absolute;
+  right: calc(100% + 0.75rem);
+  top: 50%;
+  padding: 0.35rem 0.75rem 0.35rem 1.05rem;
+  border-radius: 999px;
+  border: 1px solid rgba(168, 192, 213, 0.2);
+  background: rgba(7, 21, 34, 0.92);
+  color: #ddf3ff;
+  font-size: 10px;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  opacity: 0;
+  transform: translate(6px, -50%);
+  transition:
+    opacity 0.35s var(--ease-brand),
+    transform 0.35s var(--ease-brand);
+  pointer-events: none;
+}
+.mkr-contact-trigger:hover ~ .mkr-contact-label,
+.mkr-contact-trigger:focus-visible ~ .mkr-contact-label {
+  opacity: 1;
+  transform: translate(0, -50%);
+}
+.mkr-contact-trigger[aria-expanded="true"] ~ .mkr-contact-label {
+  opacity: 0;
+  transform: translate(6px, -50%);
+}
+
+/* ── Popover: upward-anchored glass panel (max-height is measured in JS so
+   the panel can clamp itself on short/landscape screens). ── */
+.mkr-contact-menu {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 0.7rem);
+  width: min(17.5rem, calc(100vw - 2.5rem));
+  max-width: 100%;
+  padding: 0.9rem;
+  border-radius: 1.5rem;
+  border: 1px solid rgba(168, 192, 213, 0.18);
+  background: linear-gradient(158deg, rgba(221, 243, 255, 0.08), rgba(7, 21, 34, 0.92));
+  backdrop-filter: blur(18px);
+  box-shadow:
+    0 30px 60px -32px rgba(0, 0, 0, 0.95),
+    inset 0 1px 0 rgba(221, 243, 255, 0.12);
+  transform-origin: 100% 100%;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(10px) scale(0.95);
+  transition:
+    opacity 0.28s var(--ease-brand),
+    transform 0.34s var(--ease-brand),
+    visibility 0.34s;
+}
+.mkr-contact-menu[data-state="open"] {
+  opacity: 1;
+  visibility: visible;
+  transform: none;
+}
+.mkr-contact-eyebrow {
+  padding: 0 0.35rem 0.6rem;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.34em;
+  color: #8ccbff;
+}
+.mkr-contact-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+@media (min-width: 640px) {
+  .mkr-contact-mark { width: 2rem; }
+}
+
+
+
+.mkr-contact-item {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.6rem 0.7rem;
+  border-radius: 1.05rem;
+  border: 1px solid transparent;
+  background: rgba(10, 29, 46, 0.45);
+  color: #ddf3ff;
+  opacity: 0;
+  transform: translateY(6px);
+  transition:
+    background 0.3s ease,
+    border-color 0.3s ease,
+    color 0.3s ease,
+    opacity 0.3s ease,
+    transform 0.34s var(--ease-brand);
+  transition-delay: calc(var(--mkr-contact-i, 0) * 28ms);
+}
+.mkr-contact-menu[data-state="open"] .mkr-contact-item {
+  opacity: 1;
+  transform: none;
+}
+.mkr-contact-menu[data-state="open"] .mkr-contact-item:hover,
+.mkr-contact-menu[data-state="open"] .mkr-contact-item:focus-visible {
+  background: rgba(140, 203, 255, 0.1);
+  border-color: rgba(140, 203, 255, 0.38);
+  color: #f4faff;
+  transform: translateX(-2px);
+}
+.mkr-contact-item:focus-visible {
+  border-radius: 1.05rem;
+  outline-offset: 2px;
+}
+.mkr-contact-tile {
+  display: grid;
+  place-items: center;
+  width: 2.1rem;
+  height: 2.1rem;
+  flex: none;
+  border-radius: 0.8rem;
+  border: 1px solid rgba(168, 192, 213, 0.2);
+  background: linear-gradient(155deg, rgba(221, 243, 255, 0.1), rgba(7, 21, 34, 0.7));
+  color: #ddf3ff;
+  transition:
+    border-color 0.3s ease,
+    color 0.3s ease,
+    box-shadow 0.3s ease,
+    background 0.3s ease;
+}
+.mkr-contact-menu[data-state="open"] .mkr-contact-item:hover .mkr-contact-tile,
+.mkr-contact-menu[data-state="open"] .mkr-contact-item:focus-visible .mkr-contact-tile {
+  border-color: rgba(140, 203, 255, 0.55);
+  color: #f4faff;
+  box-shadow: 0 0 20px -10px rgba(77, 168, 255, 0.85);
+}
+.mkr-contact-icon {
+  width: 1.05rem;
+  height: 1.05rem;
+  display: block;
+}
+.mkr-contact-name {
+  flex: 1 1 auto;
+  font-size: 0.875rem;
+  letter-spacing: 0.01em;
+}
+.mkr-contact-arrow {
+  width: 0.95rem;
+  height: 0.95rem;
+  color: #a8c0d5;
+  transition:
+    transform 0.3s var(--ease-brand),
+    color 0.3s ease;
+}
+.mkr-contact-menu[data-state="open"] .mkr-contact-item:hover .mkr-contact-arrow {
+  transform: translate(2px, -2px);
+  color: #8ccbff;
+}
+.mkr-contact-empty {
+  padding: 0.35rem;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: #a8c0d5;
+}
+.mkr-contact-form-link {
+  color: #8ccbff;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* Dock under prefers-reduced-motion: static, instant, fully visible. */
+@media (prefers-reduced-motion: reduce) {
+  .mkr-contact-float { animation: none !important; }
+  .mkr-contact-trigger:hover,
+  .mkr-contact-trigger:focus-visible,
+  .mkr-contact-trigger:active { transform: none; }
+  .mkr-contact-menu { transform: none; }
+  .mkr-contact-item { transform: none; transition-delay: 0ms; }
+}
